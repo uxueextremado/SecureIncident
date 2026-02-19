@@ -1,5 +1,6 @@
 # SecureIncident
 Web de Reporte de Incidentes de Seguridad en Microsoft Azure
+Seguridad en la nube - Uxue Extremado
 
 ## Descripción
 SecureIncident es una plataforma web en la nube diseñada para gestionar y rastrear incidentes de seguridad dentro de una organización. Los empleados pueden reportar incidentes como correos sospechosos (phishing), pérdida de dispositivos, accesos no autorizados, malware o fugas de información. El equipo de seguridad puede gestionar los incidentes, cambiar su estado, añadir comentarios y clasificarlos por severidad.
@@ -17,6 +18,3 @@ La plataforma se despliega en Azure con los siguientes componentes:
 - **Key Vault:** Guarda de manera segura los secretos de la base de datos
 - **Azure Monitor:** Monitorea métricas y genera alertas por CPU, intentos de login fallidos y reinicios de VM
 
-## Contacto
-Autora: Uxue Extremado Grisaleña
-Correo electrónico: uxue_extremado@euneiz.com
