@@ -12,7 +12,7 @@ resource "azurerm_linux_virtual_machine" "secureincident_vm" {
 
   os_disk {
     caching              = "ReadWrite"
-    storage_account_type  = "Standard_LRS"
+    storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {

@@ -15,3 +15,5 @@ resource "azurerm_resource_group" "secureincident_rg" {
   name     = "rg-secureincident"
   location = "West Europe"
 }
+
+data "azurerm_client_config" "current" {}
