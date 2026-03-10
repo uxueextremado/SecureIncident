@@ -29,4 +29,10 @@ resource "azurerm_linux_virtual_machine" "secureincident_vm" {
     azurerm_user_assigned_identity.vm_identity.id
     ]
   }
+
+  admin_ssh_key {
+  username   = "azureuser"
+  public_key = file("~/.ssh/id_rsa.pub")
+  }
+  disable_password_authentication = true
 }
