@@ -16,7 +16,7 @@ provider "azurerm" {
 # Crea el grupo de recursos que contendrá todos los servicios
 resource "azurerm_resource_group" "secureincident_rg" {
   name     = "rg-secureincident"
-  location = "West Europe"  # Región de Europa Oeste
+  location = "spaincentral"  # Región de España
 }
 
 # Obtiene información del cliente actual (tenant, subscription, object_id)
