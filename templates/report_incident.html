@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Reportar incidente{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-flag"></i> Reportar incidente de seguridad</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Título del incidente *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="incident_type" class="form-label">Tipo de incidente *</label>
+                        <select class="form-select" id="incident_type" name="incident_type" required>
+                            <option value="">Selecciona un tipo...</option>
+                            <option value="phishing">Phishing - Correo sospechoso</option>
+                            <option value="malware">Malware - Software malicioso</option>
+                            <option value="lost_device">Dispositivo perdido/robado</option>
+                            <option value="unauthorized_access">Acceso no autorizado</option>
+                            <option value="data_leak">Fuga de información</option>
+                            <option value="other">Otro tipo (describir en detalle)</option>
+                        </select>
+                        <small class="text-muted">Si seleccionas "Otro tipo", explica bien en la descripción</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="severity" class="form-label">Severidad *</label>
+                        <select class="form-select" id="severity" name="severity" required>
+                            <option value="low">Baja - Impacto menor</option>
+                            <option value="medium">Media - Impacto moderado</option>
+                            <option value="high">Alta - Impacto significativo</option>
+                            <option value="critical">Crítica - Impacto grave</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción detallada *</label>
+                        <textarea class="form-control" id="description" name="description" rows="6" required
+                            placeholder="Describe el incidente en detalle: cuándo ocurrió, cómo lo detectaste, qué acciones tomaste..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Enviar reporte
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

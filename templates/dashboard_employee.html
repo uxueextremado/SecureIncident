@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt"></i> Mis Incidentes</h1>
+    <a href="{{ url_for('report_incident') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Reportar incidente
+    </a>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3>{{ stats.total }}</h3>
+                <p>Total reportados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3>{{ stats.pending }}</h3>
+                <p>Pendientes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3>{{ stats.investigating }}</h3>
+                <p>En investigación</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3>{{ stats.resolved }}</h3>
+                <p>Resueltos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de incidentes -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0">Historial de incidentes</h5>
+    </div>
+    <div class="card-body">
+        {% if incidents %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Tipo</th>
+                        <th>Severidad</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incident in incidents %}
+                    <tr>
+                        <td>#{{ incident.id }}</td>
+                        <td>{{ incident.title[:50] }}{% if incident.title|length > 50 %}...{% endif %}</td>
+                        <td>
+                            {% if incident.incident_type == 'phishing' %}
+                                <span class="badge bg-danger">Phishing</span>
+                            {% elif incident.incident_type == 'malware' %}
+                                <span class="badge bg-danger">Malware</span>
+                            {% elif incident.incident_type == 'lost_device' %}
+                                <span class="badge bg-warning">Dispositivo perdido</span>
+                            {% elif incident.incident_type == 'unauthorized_access' %}
+                                <span class="badge bg-danger">Acceso no autorizado</span>
+                            {% elif incident.incident_type == 'data_leak' %}
+                                <span class="badge bg-secondary">Fuga de datos</span>
+                            {% elif incident.incident_type == 'other' %}
+                                <span class="badge bg-info">Otro tipo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ incident.incident_type|replace('_', ' ')|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ incident.get_severity_color() }}">
+                                {{ incident.severity|capitalize }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ incident.get_status_color() }}">
+                                {% if incident.status == 'pending' %}Pendiente
+                                {% elif incident.status == 'investigating' %}En investigación
+                                {% elif incident.status == 'resolved' %}Resuelto
+                                {% else %}Falso positivo{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ incident.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('incident_detail', id=incident.id) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <p>No has reportado ningún incidente todavía.</p>
+            <a href="{{ url_for('report_incident') }}" class="btn btn-primary">Reportar primer incidente</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

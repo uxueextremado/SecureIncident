@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Incidente #{{ incident.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Incidente #{{ incident.id }}: {{ incident.title }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Reportado por:</strong> {{ incident.reporter.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Fecha:</strong> {{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Tipo:</strong> 
+                        {% if incident.incident_type == 'other' %}
+                            <span class="badge bg-info">Otro tipo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ incident.incident_type|replace('_', ' ')|title }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Severidad:</strong>
+                        <span class="badge bg-{{ incident.get_severity_color() }}">{{ incident.severity|capitalize }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Estado:</strong>
+                        <span class="badge bg-{{ incident.get_status_color() }}">
+                            {% if incident.status == 'pending' %}Pendiente
+                            {% elif incident.status == 'investigating' %}En investigación
+                            {% elif incident.status == 'resolved' %}Resuelto
+                            {% else %}Falso positivo{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <strong>Descripción:</strong>
+                    <p class="mt-2">{{ incident.description }}</p>
+                </div>
+                
+                {% if incident.assigned_to %}
+                <div class="mb-4">
+                    <strong>Asignado a:</strong> {{ incident.assignee.username }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Comentarios -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comments"></i> Comentarios y seguimiento</h5>
+            </div>
+            <div class="card-body">
+                {% if incident.comments %}
+                    {% for comment in incident.comments %}
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ comment.author.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+                        <p class="mb-0 mt-2">{{ comment.content }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No hay comentarios todavía.</p>
+                {% endif %}
+                
+                {% if current_user.is_security() %}
+                <form method="POST" action="{{ url_for('add_comment', id=incident.id) }}" class="mt-3">
+                    <div class="mb-2">
+                        <label class="form-label">Añadir comentario</label>
+                        <textarea class="form-control" name="comment" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Añadir comentario
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% if current_user.is_security() %}
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-edit"></i> Gestionar incidente</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_incident', id=incident.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <select name="status" class="form-select">
+                            <option value="pending" {% if incident.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                            <option value="investigating" {% if incident.status == 'investigating' %}selected{% endif %}>En investigación</option>
+                            <option value="resolved" {% if incident.status == 'resolved' %}selected{% endif %}>Resuelto</option>
+                            <option value="false_positive" {% if incident.status == 'false_positive' %}selected{% endif %}>Falso positivo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Severidad</label>
+                        <select name="severity" class="form-select">
+                            <option value="low" {% if incident.severity == 'low' %}selected{% endif %}>Baja</option>
+                            <option value="medium" {% if incident.severity == 'medium' %}selected{% endif %}>Media</option>
+                            <option value="high" {% if incident.severity == 'high' %}selected{% endif %}>Alta</option>
+                            <option value="critical" {% if incident.severity == 'critical' %}selected{% endif %}>Crítica</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comentario (opcional)</label>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="Añade una nota sobre este cambio..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-info w-100">
+                        <i class="fas fa-save"></i> Actualizar incidente
+                    </button>
+                </form>
+                <hr>
+                <form method="POST" action="{{ url_for('delete_incident', id=incident.id) }}" onsubmit="return confirm('¿Eliminar este incidente? Esta acción no se puede deshacer.');">
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="fas fa-trash"></i> Eliminar incidente
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

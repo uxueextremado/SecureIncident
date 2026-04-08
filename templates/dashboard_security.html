@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Seguridad{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-shield-alt"></i> Panel de Seguridad</h1>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3>{{ stats.total }}</h3>
+                <p>Total incidentes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3>{{ stats.pending }}</h3>
+                <p>Pendientes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3>{{ stats.investigating }}</h3>
+                <p>En investigación</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body text-center">
+                <h3>{{ stats.critical }}</h3>
+                <p>Críticos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de incidentes -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0">Todos los incidentes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Reportado por</th>
+                        <th>Título</th>
+                        <th>Tipo</th>
+                        <th>Severidad</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                        <th>Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incident in incidents %}
+                    <tr>
+                        <td>#{{ incident.id }}</td>
+                        <td>{{ incident.reporter.username }}</td>
+                        <td>{{ incident.title[:40] }}{% if incident.title|length > 40 %}...{% endif %}</td>
+                        <td>
+                            {% if incident.incident_type == 'phishing' %}
+                                <span class="badge bg-danger">Phishing</span>
+                            {% elif incident.incident_type == 'malware' %}
+                                <span class="badge bg-danger">Malware</span>
+                            {% elif incident.incident_type == 'lost_device' %}
+                                <span class="badge bg-warning">Dispositivo perdido</span>
+                            {% elif incident.incident_type == 'unauthorized_access' %}
+                                <span class="badge bg-danger">Acceso no autorizado</span>
+                            {% elif incident.incident_type == 'data_leak' %}
+                                <span class="badge bg-secondary">Fuga de datos</span>
+                            {% elif incident.incident_type == 'other' %}
+                                <span class="badge bg-info">Otro tipo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ incident.incident_type|replace('_', ' ')|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm severity-select" data-id="{{ incident.id }}">
+                                <option value="low" {% if incident.severity == 'low' %}selected{% endif %}>Baja</option>
+                                <option value="medium" {% if incident.severity == 'medium' %}selected{% endif %}>Media</option>
+                                <option value="high" {% if incident.severity == 'high' %}selected{% endif %}>Alta</option>
+                                <option value="critical" {% if incident.severity == 'critical' %}selected{% endif %}>Crítica</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm status-select" data-id="{{ incident.id }}">
+                                <option value="pending" {% if incident.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                                <option value="investigating" {% if incident.status == 'investigating' %}selected{% endif %}>En investigación</option>
+                                <option value="resolved" {% if incident.status == 'resolved' %}selected{% endif %}>Resuelto</option>
+                                <option value="false_positive" {% if incident.status == 'false_positive' %}selected{% endif %}>Falso positivo</option>
+                            </select>
+                        </td>
+                        <td>{{ incident.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('incident_detail', id=incident.id) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ incident.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modales de confirmación para eliminar -->
+{% for incident in incidents %}
+<div class="modal fade" id="deleteModal{{ incident.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar el incidente <strong>#{{ incident.id }}: {{ incident.title[:50] }}</strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer y eliminará también todos los comentarios asociados.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('delete_incident', id=incident.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.querySelectorAll('.severity-select').forEach(select => {
+    select.addEventListener('change', function() {
+        const id = this.dataset.id;
+        const severity = this.value;
+        fetch(`/security/incidente/${id}/actualizar`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `severity=${severity}&status=${document.querySelector(`.status-select[data-id="${id}"]`).value}`
+        }).then(() => location.reload());
+    });
+});
+
+document.querySelectorAll('.status-select').forEach(select => {
+    select.addEventListener('change', function() {
+        const id = this.dataset.id;
+        const status = this.value;
+        fetch(`/security/incidente/${id}/actualizar`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `status=${status}&severity=${document.querySelector(`.severity-select[data-id="${id}"]`).value}`
+        }).then(() => location.reload());
+    });
+});
+</script>
+{% endblock %}

@@ -9,3 +9,12 @@ terraform.tfstate.backup
 
 # Logs
 *.log
+
+# frontend
+venv/
+__pycache__/
+instance/
+.env
+*.pyc
+.DS_Store
+.vscode/
