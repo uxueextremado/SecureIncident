@@ -3,32 +3,35 @@
 {% block title %}Iniciar sesión{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center min-vh-80 py-5">
     <div class="col-md-6 col-lg-5">
         <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h4 class="mb-0"><i class="fas fa-sign-in-alt"></i> Iniciar sesión</h4>
+            <div class="card-header bg-transparent text-center border-0 pt-4">
+                <i class="fas fa-shield-alt fa-3x" style="color: #667eea;"></i>
+                <h3 class="mt-2" style="color: #ffffff;">Bienvenido</h3>
+                <p style="color: rgba(255, 255, 255, 0.7);">Inicia sesión en SecureIncident</p>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="tu@email.com">
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i> Contraseña
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-sign-in-alt"></i> Ingresar
                     </button>
                 </form>
             </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">¿No tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate aquí</a></p>
-                <small class="text-muted">Credenciales de prueba:<br>
-                Empleado: employee@secureincident.com / Employee123!<br>
-                Seguridad: security@secureincident.com / Security123!</small>
+            <div class="card-footer bg-transparent text-center border-0 pb-4">
+                <p class="mb-0" style="color: rgba(255, 255, 255, 0.8);">¿No tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate aquí</a></p>
             </div>
         </div>
     </div>

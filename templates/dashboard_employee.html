@@ -10,7 +10,7 @@
     </a>
 </div>
 
-<!-- Estadísticas -->
+<!-- Estadísticas con colores -->
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="card text-white bg-primary">
@@ -51,10 +51,10 @@
     <div class="card-header">
         <h5 class="mb-0">Historial de incidentes</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         {% if incidents %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-dark table-hover mb-0">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -114,7 +114,7 @@
         </div>
         {% else %}
         <div class="text-center py-5">
-            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <i class="fas fa-inbox fa-3x mb-3" style="color: rgba(255,255,255,0.5);"></i>
             <p>No has reportado ningún incidente todavía.</p>
             <a href="{{ url_for('report_incident') }}" class="btn btn-primary">Reportar primer incidente</a>
         </div>
