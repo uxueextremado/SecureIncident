@@ -29,7 +29,8 @@ with app.app_context():
         admin = User(
             username='security_team',
             email='security@secureincident.com',
-            role='security'
+            role='security',
+            active=True
         )
         admin.set_password('Security123!')
         db.session.add(admin)
@@ -41,7 +42,8 @@ with app.app_context():
         employee = User(
             username='employee1',
             email='employee@secureincident.com',
-            role='employee'
+            role='employee',
+            active=True
         )
         employee.set_password('Employee123!')
         db.session.add(employee)
@@ -64,12 +66,13 @@ def login():
         password = request.form.get('password')
         
         user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password):
+        # Verificar credenciales y que el usuario esté activo
+        if user and user.check_password(password) and user.active:
             login_user(user)
             flash(f'¡Bienvenido {user.username}!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            flash('Email o contraseña incorrectos', 'danger')
+            flash('Email o contraseña incorrectos, o usuario deshabilitado', 'danger')
     
     return render_template('login.html')
 
@@ -88,7 +91,7 @@ def registro():
         elif User.query.filter_by(username=username).first():
             flash('El nombre de usuario ya existe', 'danger')
         else:
-            user = User(username=username, email=email, role='employee')
+            user = User(username=username, email=email, role='employee', active=True)
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
@@ -217,8 +220,6 @@ def add_comment(id):
     flash('Comentario añadido', 'success')
     return redirect(url_for('incident_detail', id=id))
 
-# ==================== ELIMINAR INCIDENTE (SOLO SEGURIDAD) ====================
-
 @app.route('/security/incidente/<int:id>/eliminar', methods=['POST'])
 @login_required
 def delete_incident(id):
@@ -227,13 +228,44 @@ def delete_incident(id):
         return redirect(url_for('dashboard'))
     
     incident = Incident.query.get_or_404(id)
-    
-    # Eliminar el incidente (los comentarios se eliminan automáticamente por cascade)
     db.session.delete(incident)
     db.session.commit()
     
     flash(f'Incidente #{id} eliminado correctamente', 'success')
     return redirect(url_for('security_dashboard'))
+
+# ==================== GESTIÓN DE USUARIOS (SOLO SEGURIDAD) ====================
+
+@app.route('/security/usuarios')
+@login_required
+def security_users():
+    if not current_user.is_security():
+        flash('No autorizado', 'danger')
+        return redirect(url_for('dashboard'))
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('security_users.html', users=users)
+
+@app.route('/security/usuario/<int:id>/toggle', methods=['POST'])
+@login_required
+def toggle_user_active(id):
+    if not current_user.is_security():
+        flash('No autorizado', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    user = User.query.get_or_404(id)
+    
+    # No permitir deshabilitar a uno mismo
+    if user.id == current_user.id:
+        flash('No puedes deshabilitar tu propio usuario', 'danger')
+        return redirect(url_for('security_users'))
+    
+    # Cambiar estado
+    user.active = not user.active
+    db.session.commit()
+    
+    estado = "habilitado" if user.active else "deshabilitado"
+    flash(f'Usuario {user.email} ha sido {estado}', 'success')
+    return redirect(url_for('security_users'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

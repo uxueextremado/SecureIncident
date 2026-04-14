@@ -10,7 +10,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default='employee')  # employee, security
+    role = db.Column(db.String(20), default='employee')
+    active = db.Column(db.Boolean, default=True)  # Campo para deshabilitar usuarios
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     incidents = db.relationship('Incident', backref='reporter', lazy=True, foreign_keys='Incident.user_id')
@@ -25,14 +26,17 @@ class User(UserMixin, db.Model):
     
     def is_security(self):
         return self.role == 'security'
+    
+    def is_active(self):
+        return self.active
 
 class Incident(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    incident_type = db.Column(db.String(50))  # phishing, malware, lost_device, unauthorized_access, data_leak
-    severity = db.Column(db.String(20), default='medium')  # low, medium, high, critical
-    status = db.Column(db.String(20), default='pending')  # pending, investigating, resolved, false_positive
+    incident_type = db.Column(db.String(50))
+    severity = db.Column(db.String(20), default='medium')
+    status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

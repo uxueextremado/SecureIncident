@@ -55,7 +55,7 @@
             </div>
         </div>
         
-        <!-- Comentarios -->
+        <!-- Comentarios y seguimiento -->
         <div class="card shadow">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-comments"></i> Comentarios y seguimiento</h5>
@@ -63,12 +63,12 @@
             <div class="card-body">
                 {% if incident.comments %}
                     {% for comment in incident.comments %}
-                    <div class="mb-3 p-3 bg-light rounded">
+                    <div class="mb-3 p-3 bg-light rounded" style="color: #000000;">
                         <div class="d-flex justify-content-between">
-                            <strong>{{ comment.author.username }}</strong>
-                            <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                            <strong style="color: #000000;">{{ comment.author.username }}</strong>
+                            <small class="text-muted" style="color: #6c757d !important;">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
                         </div>
-                        <p class="mb-0 mt-2">{{ comment.content }}</p>
+                        <p class="mb-0 mt-2" style="color: #000000;">{{ comment.content }}</p>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -79,7 +79,7 @@
                 <form method="POST" action="{{ url_for('add_comment', id=incident.id) }}" class="mt-3">
                     <div class="mb-2">
                         <label class="form-label">Añadir comentario</label>
-                        <textarea class="form-control" name="comment" rows="3" required></textarea>
+                        <textarea class="form-control" name="comment" rows="3" required style="color: #000000; background-color: #ffffff;"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-paper-plane"></i> Añadir comentario
@@ -118,7 +118,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Comentario (opcional)</label>
-                        <textarea name="comment" class="form-control" rows="3" placeholder="Añade una nota sobre este cambio..."></textarea>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="Añade una nota sobre este cambio..." style="color: #000000; background-color: #ffffff;"></textarea>
                     </div>
                     <button type="submit" class="btn btn-info w-100">
                         <i class="fas fa-save"></i> Actualizar incidente
