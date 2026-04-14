@@ -11,11 +11,20 @@ El sistema se despliega en Microsoft Azure utilizando una arquitectura segura y 
 ## Arquitectura
 La plataforma se despliega en Azure con los siguientes componentes:
 
-- **Red Virtual (VNet):** Segmentada en subred pública y privada
-  - Subred pública: VM Linux con la aplicación web
-  - Subred privada: Base de datos PostgreSQL
-- **VM Linux:** Ejecuta la aplicación web
-- **PostgreSQL Flexible Server:** Almacena usuarios e incidentes
-- **Key Vault:** Guarda de manera segura los secretos de la base de datos
-- **Azure Monitor:** Monitorea métricas y genera alertas por CPU, intentos de login fallidos y reinicios de VM
+- **Red Virtual (VNet):** Una única VNet con espacio de direcciones `10.0.0.0/16` que contiene:
+  - Subred para Private Endpoint (conecta de forma privada con PostgreSQL).
+  - Subred para VNet Integration (permite la comunicación segura desde App Service).
+- **Azure App Service:** Ejecuta la aplicación web (Python/Flask) sin necesidad de administrar servidores. Escalado automático y SSL integrado.
+- **PostgreSQL Flexible Server:** Base de datos relacional que almacena usuarios, incidentes y comentarios. Se despliega sin acceso público y solo es accesible a través de un Private Endpoint dentro de la VNet.
+- **Private Endpoint:** Asigna una IP privada a PostgreSQL dentro de la VNet, garantizando que el tráfico entre App Service y la base de datos no salga a Internet.
+- **Azure Key Vault:** Almacena de forma segura las credenciales de la base de datos, cadenas de conexión y otros secretos. App Service accede mediante Managed Identity.
+- **Azure Monitor:** Recopila métricas y logs. Genera alertas por CPU alta, intentos de login fallidos, reinicios de la aplicación y rendimiento de la base de datos.
 
+## Frontend
+La interfaz web está desarrollada con HTML5, CSS3, Bootstrap 5 y Jinja2, e incluye:
+
+- **Autenticación** con registro/login y roles diferenciados (empleado / seguridad).
+- **Dashboard para empleados:** estadísticas personales, tabla de incidentes propios y formulario de reporte con tipos predefinidos más la opción "Otro tipo".
+- **Dashboard para seguridad:** estadísticas globales, tabla completa de incidentes con edición en línea (estado/severidad), eliminación y acceso a la gestión de usuarios.
+- **Gestión de usuarios:** listado de todos los usuarios, visualización de estado (activo/deshabilitado) y acciones para habilitar o deshabilitar (solo seguridad).
+- **Vista de detalle:** información completa del incidente, comentarios y panel de gestión para el equipo de seguridad.
