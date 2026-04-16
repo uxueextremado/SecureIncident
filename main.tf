@@ -3,21 +3,21 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"  # Usa AzureRM versión 3.x
+      version = "~> 3.0"
     }
   }
 }
 
-# Configura el proveedor de Azure
+# Proveedor de Azure
 provider "azurerm" {
-  features {}  # Habilita todas las features del proveedor
+  features {}
 }
 
-# Crea el grupo de recursos que contendrá todos los servicios
+# Grupo de recursos principal
 resource "azurerm_resource_group" "secureincident_rg" {
-  name     = "rg-secureincident"
-  location = "spaincentral"  # Región de España
+  name     = var.resource_group_name
+  location = var.location
 }
 
-# Obtiene información del cliente actual (tenant, subscription, object_id)
-data "azurerm_client_config" "current" {}  # Útil para Key Vault y accesos
+# Datos del cliente actual (para Key Vault)
+data "azurerm_client_config" "current" {}
