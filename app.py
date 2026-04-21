@@ -21,34 +21,37 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Crear tablas y usuario admin
+# Crear tablas y usuarios por defecto (solo si no existen)
 with app.app_context():
     db.create_all()
-    # Crear usuario admin de seguridad si no existe
-    if not User.query.filter_by(email='security@secureincident.com').first():
-        admin = User(
-            username='security_team',
-            email='security@secureincident.com',
-            role='security',
-            active=True
-        )
-        admin.set_password('Security123!')
-        db.session.add(admin)
-        db.session.commit()
-        print("Usuario de seguridad creado: security@secureincident.com / Security123!")
     
-    # Crear usuario empleado de ejemplo
-    if not User.query.filter_by(email='employee@secureincident.com').first():
-        employee = User(
-            username='employee1',
-            email='employee@secureincident.com',
-            role='employee',
-            active=True
-        )
-        employee.set_password('Employee123!')
-        db.session.add(employee)
-        db.session.commit()
-        print("Usuario empleado creado: employee@secureincident.com / Employee123!")
+    # Crear usuario de seguridad por defecto (si no existe ninguno con rol 'security')
+    if User.query.filter_by(role='security').count() == 0:
+        admin_email = os.getenv('DEFAULT_SECURITY_EMAIL', 'security@secureincident.com')
+        admin_user = os.getenv('DEFAULT_SECURITY_USERNAME', 'security_team')
+        admin_pass = os.getenv('DEFAULT_SECURITY_PASSWORD')
+        if admin_pass:
+            admin = User(username=admin_user, email=admin_email, role='security', active=True)
+            admin.set_password(admin_pass)
+            db.session.add(admin)
+            db.session.commit()
+            print(f"✅ Usuario de seguridad creado: {admin_email}")
+        else:
+            print("⚠️ ADVERTENCIA: No se creó usuario de seguridad porque falta DEFAULT_SECURITY_PASSWORD")
+    
+    # Crear usuario empleado por defecto (solo si no existe ningún empleado)
+    if User.query.filter_by(role='employee').count() == 0:
+        emp_email = os.getenv('DEFAULT_EMPLOYEE_EMAIL', 'employee@secureincident.com')
+        emp_user = os.getenv('DEFAULT_EMPLOYEE_USERNAME', 'employee1')
+        emp_pass = os.getenv('DEFAULT_EMPLOYEE_PASSWORD')
+        if emp_pass:
+            employee = User(username=emp_user, email=emp_email, role='employee', active=True)
+            employee.set_password(emp_pass)
+            db.session.add(employee)
+            db.session.commit()
+            print(f"✅ Usuario empleado creado: {emp_email}")
+        else:
+            print("⚠️ ADVERTENCIA: No se creó usuario empleado porque falta DEFAULT_EMPLOYEE_PASSWORD")
 
 # ==================== RUTAS PÚBLICAS ====================
 

@@ -25,8 +25,16 @@ resource "azurerm_linux_web_app" "secureincident_app" {
   app_settings = {
     "DATABASE_URL" = "postgresql://${var.postgresql_admin_login}@${var.postgresql_server_name}:${azurerm_key_vault_secret.db_password.value}@${var.postgresql_server_name}.postgres.database.azure.com:5432/${var.postgresql_database_name}?sslmode=require"
     "SECRET_KEY"   = var.secret_key
-    # Forzar la instalación de dependencias desde requirements.txt
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    
+    # Variables para los usuarios por defecto
+    "DEFAULT_SECURITY_EMAIL"    = var.default_security_email
+    "DEFAULT_SECURITY_USERNAME" = var.default_security_username
+    "DEFAULT_SECURITY_PASSWORD" = var.default_security_password
+    
+    "DEFAULT_EMPLOYEE_EMAIL"    = var.default_employee_email
+    "DEFAULT_EMPLOYEE_USERNAME" = var.default_employee_username
+    "DEFAULT_EMPLOYEE_PASSWORD" = var.default_employee_password
   }
 
   # Identidad gestionada (para acceder a Key Vault en el futuro)

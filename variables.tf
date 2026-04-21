@@ -86,3 +86,43 @@ variable "secret_key" {
   type        = string
   sensitive   = true
 }
+
+# Variables para usuarios por defecto (seguridad)
+variable "default_security_email" {
+  description = "Email del usuario de seguridad por defecto"
+  type        = string
+  default     = "security@secureincident.com"
+}
+
+variable "default_security_username" {
+  description = "Nombre de usuario del administrador de seguridad"
+  type        = string
+  default     = "security_team"
+}
+
+variable "default_security_password" {
+  description = "Contraseña del usuario de seguridad por defecto"
+  type        = string
+  sensitive   = true
+  default     = "Security123!"
+}
+
+# Variables para usuario empleado por defecto
+variable "default_employee_email" {
+  description = "Email del empleado por defecto"
+  type        = string
+  default     = "employee@secureincident.com"
+}
+
+variable "default_employee_username" {
+  description = "Nombre del empleado por defecto"
+  type        = string
+  default     = "employee1"
+}
+
+variable "default_employee_password" {
+  description = "Contraseña del empleado por defecto"
+  type        = string
+  sensitive   = true
+  default     = "Employee123!"
+}
