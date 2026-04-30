@@ -28,8 +28,18 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan
+        run: |
+          terraform plan \
+            -var="db_password=${{ secrets.TF_VAR_db_password }}" \
+            -var="secret_key=${{ secrets.TF_VAR_secret_key }}" \
+            -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
+            -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}"
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve
+        run: |
+          terraform apply -auto-approve \
+            -var="db_password=${{ secrets.TF_VAR_db_password }}" \
+            -var="secret_key=${{ secrets.TF_VAR_secret_key }}" \
+            -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
+            -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}"
