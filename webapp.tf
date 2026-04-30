@@ -4,7 +4,7 @@ resource "azurerm_service_plan" "secureincident_asp" {
   resource_group_name = azurerm_resource_group.secureincident_rg.name
   location            = azurerm_resource_group.secureincident_rg.location
   os_type             = "Linux"
-  sku_name            = "F1"          # Plan gratuito
+  sku_name            = "B1"          # Plan gratuito
 }
 
 # Web App Linux con Python
