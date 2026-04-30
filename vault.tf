@@ -1,6 +1,6 @@
 # Key Vault para guardar secretos
 resource "azurerm_key_vault" "secureincident_vault" {
-  name                        = "kv-secureincident"
+  name                        = "kv-secureincident2"   # ← Nombre nuevo
   location                    = azurerm_resource_group.secureincident_rg.location
   resource_group_name         = azurerm_resource_group.secureincident_rg.name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
@@ -19,9 +19,9 @@ resource "azurerm_key_vault_access_policy" "current_user" {
   ]
 }
 
-# Secreto con la contraseña de PostgreSQL
+# Secreto con la contraseña de PostgreSQL (nombre nuevo)
 resource "azurerm_key_vault_secret" "db_password" {
-  name         = "db-password"
+  name         = "db-password2026"   # ← Nombre nuevo
   value        = var.db_password
   key_vault_id = azurerm_key_vault.secureincident_vault.id
 

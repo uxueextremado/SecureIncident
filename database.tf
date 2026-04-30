@@ -11,7 +11,6 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres_dns_link" {
   private_dns_zone_name = azurerm_private_dns_zone.postgres_dns.name
   virtual_network_id    = azurerm_virtual_network.secureincident_vnet.id
 }
-
 # Servidor PostgreSQL Flexible Server (dentro de la subred privada)
 resource "azurerm_postgresql_flexible_server" "secureincident_db" {
   name                   = var.postgresql_server_name
@@ -21,9 +20,9 @@ resource "azurerm_postgresql_flexible_server" "secureincident_db" {
   administrator_login    = var.postgresql_admin_login
   administrator_password = azurerm_key_vault_secret.db_password.value
 
-  sku_name   = "B_Standard_B1ms"   # Plan gratuito / bajo coste
+  sku_name   = "B_Standard_B1ms"
   version    = "14"
-  zone       = "1"
+  zone       = null  # <--- CAMBIO CLAVE: Se elimina la zona fija
 
   storage_mb            = 32768
   backup_retention_days = 7
@@ -31,7 +30,7 @@ resource "azurerm_postgresql_flexible_server" "secureincident_db" {
   delegated_subnet_id = azurerm_subnet.secureincident_subnet_private.id
   private_dns_zone_id = azurerm_private_dns_zone.postgres_dns.id
 
-  public_network_access_enabled = false   # Sin IP pública
+  public_network_access_enabled = false
 
   depends_on = [
     azurerm_key_vault_secret.db_password,

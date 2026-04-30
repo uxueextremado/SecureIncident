@@ -18,9 +18,13 @@ resource "azurerm_linux_web_app" "secureincident_app" {
     application_stack {
       python_version = "3.12"
     }
-    always_on = false   # Ahorra recursos en plan gratuito
+    always_on           = false          # Ahorra recursos en plan gratuito
+    vnet_route_all_enabled = true        # Necesario para VNet Integration
+    
   }
 
+  https_only          = true           # Requerido por la política
+  
   # Configuración de la conexión a la base de datos
   app_settings = {
     "DATABASE_URL" = "postgresql://${var.postgresql_admin_login}@${var.postgresql_server_name}:${azurerm_key_vault_secret.db_password.value}@${var.postgresql_server_name}.postgres.database.azure.com:5432/${var.postgresql_database_name}?sslmode=require"
@@ -41,10 +45,15 @@ resource "azurerm_linux_web_app" "secureincident_app" {
   identity {
     type = "SystemAssigned"
   }
+
+  # 🔹 Etiqueta obligatoria exigida por la política
+  tags = {
+    Project = "Incidencias"
+  }
 }
 
-# Configurar VNet Integration para que la Web App pueda acceder a la subred privada
-resource "azurerm_web_app_virtual_network_swift_connection" "vnet_integration" {
+# Configurar VNet Integration (Swift connection)
+resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
   app_service_id = azurerm_linux_web_app.secureincident_app.id
   subnet_id      = azurerm_subnet.app_integration_subnet.id
 }

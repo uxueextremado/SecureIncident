@@ -2,7 +2,7 @@
 variable "location" {
   description = "Región de Azure"
   type        = string
-  default     = "spaincentral"
+  default     = "westeurope"   # ← Cambiado para cumplir la política
 }
 
 variable "resource_group_name" {
