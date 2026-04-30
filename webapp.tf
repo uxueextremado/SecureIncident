@@ -58,10 +58,3 @@ resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integratio
   subnet_id      = azurerm_subnet.app_integration_subnet.id
 }
 
-# Despliegue continuo desde GitHub
-resource "azurerm_app_service_source_control" "github_deploy" {
-  app_id   = azurerm_linux_web_app.secureincident_app.id
-  repo_url = var.github_repo_url
-  branch   = var.github_branch
-  use_manual_integration = false
-}
