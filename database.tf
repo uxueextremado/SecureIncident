@@ -22,7 +22,7 @@ resource "azurerm_postgresql_flexible_server" "secureincident_db" {
 
   sku_name   = "B_Standard_B1ms"
   version    = "14"
-  zone       = null  # <--- CAMBIO CLAVE: Se elimina la zona fija
+  # zone       = null  # <--- CAMBIO CLAVE: Se elimina la zona fija
 
   storage_mb            = 32768
   backup_retention_days = 7
