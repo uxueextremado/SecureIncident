@@ -44,7 +44,7 @@ Para que el pipeline funcione correctamente, se añadieron los siguientes elemen
 
 - **Secrets (valores sensibles)**
   
-  | Nombre del secret                     | Propósito                                                   |
+| Nombre del secret                     | Propósito                                                   |
 |--------------------------------------|-------------------------------------------------------------|
 | AZURE_CLIENT_ID                      | ID de la Managed Identity para autenticación OIDC          |
 | AZURE_TENANT_ID                      | ID del inquilino de Azure AD                               |
