@@ -43,6 +43,7 @@ El despliegue de la infraestructura se automatiza mediante un pipeline de GitHub
 Para que el pipeline funcione correctamente, se añadieron los siguientes elementos en el repositorio (Settings → Secrets and variables → Actions):
 
 - **Secrets (valores sensibles)**
+  
   | Nombre del secret                     | Propósito                                                   |
 |--------------------------------------|-------------------------------------------------------------|
 | AZURE_CLIENT_ID                      | ID de la Managed Identity para autenticación OIDC          |
@@ -54,6 +55,7 @@ Para que el pipeline funcione correctamente, se añadieron los siguientes elemen
 | TF_VAR_DEFAULT_EMPLOYEE_PASSWORD     | Contraseña del usuario por defecto de empleado             |
 
 - **Variables (no sensibles)**
+  
 | Nombre de la variable | Valor                                              | Propósito                                      |
 |----------------------|----------------------------------------------------|-----------------------------------------------|
 | REPO_URL             | https://github.com/uxueextremado/SecureIncident    | URL del repositorio para el despliegue continuo |
