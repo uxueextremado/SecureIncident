@@ -87,9 +87,24 @@ Para que el pipeline funcione correctamente, se añadieron los siguientes elemen
 |----------------------|----------------------------------------------------|-----------------------------------------------|
 | REPO_URL             | https://github.com/uxueextremado/SecureIncident    | URL del repositorio para el despliegue continuo |
 
-## Gestión de Costes
+### Gestión de Costes
 Para optimizar el consumo de créditos de Azure for Students y evitar gastos innecesarios (debido al límite de créditos), se sigue un procedimiento basado en escenarios momentáneos: 
 
 - **Despliegue controlado:** La infraestructura se despliega solo cuando se va a utilizar (con terraform apply).  
 - **Destrucción automática:** Al acabar cada simulación, se ejecuta terraform destry para eliminar todos los recursos y dejar de gastar créditos.
 - **Coste estimado:** Con el plan App Service B1 y PostgreSQL B1ms, el coste aproximado es de 15-20 €/mes si no lo destruiríamos nunca. Sin embargo, como solo lo activados cuando queremos realizar las pruebas el precio baja a céntimos por hora. 
+
+## Destroy
+Para destruir los recursos creados debemos seguir los siguientes pasos:
+
+1. Elimina el secreto y las políticas del estado antes de destruir:
+*terraform state rm azurerm_key_vault_secret.db_password*
+*terraform state rm azurerm_key_vault_access_policy.current_user*
+*terraform state rm azurerm_key_vault_access_policy.managed_identity*
+*terraform state rm azurerm_key_vault.secureincident_vault*
+
+2. Purgar Key Vault (para evitar conflictos de nombre) desde local o con el comando:
+*az keyvault purge --name kv-secureincident2 --location spaincentral*
+
+3. Ejucuta destroy:
+*terraform destroy -auto-approve*
