@@ -27,7 +27,7 @@ resource "azurerm_linux_web_app" "secureincident_app" {
   
   # Configuración de la conexión a la base de datos
   app_settings = {
-    "DATABASE_URL" = "postgresql://${var.postgresql_admin_login}@${var.postgresql_server_name}:${azurerm_key_vault_secret.db_password.value}@${var.postgresql_server_name}.postgres.database.azure.com:5432/${var.postgresql_database_name}?sslmode=require"
+    "DATABASE_URL" = "postgresql://${var.postgresql_admin_login}:${azurerm_key_vault_secret.db_password.value}@${var.postgresql_server_name}.postgres.database.azure.com:5432/${var.postgresql_database_name}?sslmode=require"
     "SECRET_KEY"   = var.secret_key
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     
