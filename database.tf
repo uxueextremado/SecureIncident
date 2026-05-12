@@ -30,7 +30,7 @@ resource "azurerm_postgresql_flexible_server" "secureincident_db" {
   delegated_subnet_id = azurerm_subnet.secureincident_subnet_private.id
   private_dns_zone_id = azurerm_private_dns_zone.postgres_dns.id
 
-  # public_network_access_enabled = false
+  public_network_access_enabled = false
 
   depends_on = [
     azurerm_key_vault_secret.db_password,
