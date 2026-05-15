@@ -17,8 +17,7 @@ on:
         options:
           - all
           - infrastructure
-          - backend
-          - frontend
+          - app
         default: 'all'
         required: true
 
@@ -32,7 +31,7 @@ concurrency:
 
 jobs:
   infrastructure:
-    name: 🏗️ Infrastructure (${{ inputs.action }})
+    name: Infrastructure (${{ inputs.action }})
     if: inputs.component == 'all' || inputs.component == 'infrastructure'
     runs-on: ubuntu-latest
     steps:
@@ -73,12 +72,13 @@ jobs:
       - name: Purge Key Vault (after destroy)
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
-          echo "Recuerda purgar el Key Vault manualmente si vas a recrearlo:"
+          echo "⚠️ Recuerda purgar el Key Vault manualmente:"
           echo "az keyvault purge --name kv-secureincident2 --location spaincentral"
 
-  backend:
-    name: Backend (${{ inputs.action }})
-    if: inputs.component == 'all' || inputs.component == 'backend'
+  app:
+    name: Application (${{ inputs.action }})
+    needs: infrastructure
+    if: inputs.component == 'all' || inputs.component == 'app'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,57 +90,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Zip backend
+      - name: Zip application
         run: |
           mkdir -p deploy_tmp
-          cp -r backend/* deploy_tmp/
+          cp -r back_front/* deploy_tmp/
           cd deploy_tmp
-          zip -r ../backend.zip .
+          zip -r ../app.zip .
           cd ..
 
-      - name: Deploy backend to App Service
+      - name: Deploy to App Service
         if: inputs.action == 'apply'
         run: |
-          az webapp deploy \
-            --name webapp-secureincident \
+          az webapp deployment source config-zip \
             --resource-group rg-secureincident \
-            --src-path backend.zip \
-            --type zip
-        continue-on-error: false
-
-  frontend:
-    name: Frontend (${{ inputs.action }})
-    if: inputs.component == 'all' || inputs.component == 'frontend'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Zip frontend
-        run: |
-          mkdir -p deploy_tmp
-          cp -r frontend/* deploy_tmp/
-          cd deploy_tmp
-          zip -r ../frontend.zip .
-          cd ..
-
-      - name: Deploy frontend to App Service
-        if: inputs.action == 'apply'
-        run: |
-          az webapp deploy \
             --name webapp-secureincident \
-            --resource-group rg-secureincident \
-            --src-path frontend.zip \
-            --type zip
-        continue-on-error: false
+            --src app.zip

@@ -1,15 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from backend.models import db, User, Incident, Comment
+from models import db, User, Incident, Comment
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 app = Flask(__name__,
-            template_folder=os.path.join(BASE_DIR, 'frontend', 'templates'),
-            static_folder=os.path.join(BASE_DIR, 'frontend', 'static'))
+            template_folder='templates',
+            static_folder='static')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///app.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
