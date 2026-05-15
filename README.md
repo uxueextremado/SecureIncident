@@ -141,3 +141,6 @@ Para destruir los recursos creados debemos seguir los siguientes pasos:
 3. Ejucuta destroy:
 
 *terraform destroy -auto-approve*
+
+
+https://webapp-secureincident.azurewebsites.net/

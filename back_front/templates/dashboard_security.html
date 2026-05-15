@@ -115,33 +115,14 @@
                             </a>
                         </td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ incident.id }}">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <form method="POST" action="{{ url_for('delete_incident', id=incident.id) }}" style="display: inline;" 
+                                  onsubmit="return confirm('¿Estás seguro de que quieres eliminar el incidente #{{ incident.id }}: {{ incident.title[:30] }}? Esta acción no se puede deshacer.');">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
-                    
-                    <!-- Modal de confirmación para eliminar incidente -->
-                    <div class="modal fade" id="deleteModal{{ incident.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content bg-dark">
-                                <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirmar eliminación</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>¿Estás seguro de que quieres eliminar el incidente <strong>#{{ incident.id }}: {{ incident.title[:50] }}</strong>?</p>
-                                    <p class="text-danger">Esta acción no se puede deshacer y eliminará también todos los comentarios asociados.</p>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <form method="POST" action="{{ url_for('delete_incident', id=incident.id) }}" style="display: inline;">
-                                        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     {% endfor %}
                 </tbody>
             </table>
