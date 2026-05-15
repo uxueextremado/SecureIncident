@@ -110,15 +110,27 @@ jobs:
       - name: Destroy application code
         if: inputs.action == 'destroy'
         run: |
-          echo "Destruyendo aplicación en App Service..."
-          # Opcional: desplegar un zip vacío o eliminar los archivos
+          echo "🗑️ Destruyendo aplicación en App Service..."
+          # Crear un zip con un index.html informativo
           mkdir -p empty_app
-          echo "App removed" > empty_app/index.html
+          cat > empty_app/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head><title>App Destruida</title></head>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+          <h1>🗑️ Aplicación destruida</h1>
+          <p>La aplicación ha sido eliminada del App Service.</p>
+          <p>Ejecuta el workflow con <strong>Action: apply, Component: app</strong> para restaurarla.</p>
+          <hr>
+          <small>SecureIncident - Modo seguro</small>
+          </body>
+          </html>
+          EOF
           cd empty_app
           zip -r ../empty.zip .
           cd ..
           az webapp deployment source config-zip \
             --resource-group rg-secureincident \
             --name webapp-secureincident \
-            --src empty.zip || true
-          echo "Aplicación eliminada del App Service"
+            --src empty.zip
+          echo "✅ Aplicación eliminada del App Service"
