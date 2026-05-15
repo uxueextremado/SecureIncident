@@ -60,29 +60,6 @@ resource "azurerm_monitor_action_group" "secureincident_ag" {
   short_name          = "secureag"
 }
 
-# 6. Alerta: CPU alta en App Service
-resource "azurerm_monitor_metric_alert" "cpu_high" {
-  name                = "alert-cpu-high"
-  resource_group_name = azurerm_resource_group.secureincident_rg.name
-  scopes              = [azurerm_linux_web_app.secureincident_app.id]
-  description         = "Alerta cuando la CPU supera el 80% durante 5 minutos"
-  severity            = 2
-  frequency           = "PT5M"
-  window_size         = "PT5M"
-
-  criteria {
-    metric_namespace = "Microsoft.Web/sites"
-    metric_name      = "CpuPercentage"
-    aggregation      = "Average"
-    operator         = "GreaterThan"
-    threshold        = 80
-  }
-
-  action {
-    action_group_id = azurerm_monitor_action_group.secureincident_ag.id
-  }
-}
-
 # 7. Alerta: Errores HTTP 5xx (servidor)
 resource "azurerm_monitor_metric_alert" "http_errors" {
   name                = "alert-http-errors"
