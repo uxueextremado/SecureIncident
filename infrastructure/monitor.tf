@@ -94,7 +94,7 @@ resource "azurerm_monitor_metric_alert" "app_restarts" {
   description         = "Alerta cuando la aplicación se reinicia más de 2 veces en 10 minutos"
   severity            = 2
   frequency           = "PT5M"
-  window_size         = "PT10M"
+  window_size         = "PT15M"
 
   criteria {
     metric_namespace = "Microsoft.Web/sites"
