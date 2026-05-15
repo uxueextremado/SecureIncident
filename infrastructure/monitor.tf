@@ -48,22 +48,19 @@ resource "azurerm_monitor_diagnostic_setting" "postgresql" {
   enabled_log {
     category = "PostgreSQLLogs"
   }
-  enabled_log {
-    category = "PostgreSQLFlexibleSessions"
-  }
   metric {
     category = "AllMetrics"
   }
 }
 
-# 5. Action Group (sin email, pero necesario para las alertas)
+# 5. Action Group (para las alertas)
 resource "azurerm_monitor_action_group" "secureincident_ag" {
   name                = "ag-secureincident"
   resource_group_name = azurerm_resource_group.secureincident_rg.name
   short_name          = "secureag"
 }
 
-# 6. Alerta: CPU alta
+# 6. Alerta: CPU alta en App Service
 resource "azurerm_monitor_metric_alert" "cpu_high" {
   name                = "alert-cpu-high"
   resource_group_name = azurerm_resource_group.secureincident_rg.name
@@ -86,22 +83,22 @@ resource "azurerm_monitor_metric_alert" "cpu_high" {
   }
 }
 
-# 7. Alerta: Reinicios de la aplicación
-resource "azurerm_monitor_metric_alert" "app_restarts" {
-  name                = "alert-app-restarts"
+# 7. Alerta: Errores HTTP 5xx (servidor)
+resource "azurerm_monitor_metric_alert" "http_errors" {
+  name                = "alert-http-errors"
   resource_group_name = azurerm_resource_group.secureincident_rg.name
   scopes              = [azurerm_linux_web_app.secureincident_app.id]
-  description         = "Alerta cuando la aplicación se reinicia más de 2 veces en 10 minutos"
+  description         = "Alerta cuando hay más de 10 errores HTTP 5xx en 15 minutos"
   severity            = 2
   frequency           = "PT5M"
   window_size         = "PT15M"
 
   criteria {
     metric_namespace = "Microsoft.Web/sites"
-    metric_name      = "RestartCount"
+    metric_name      = "Http5xx"
     aggregation      = "Count"
     operator         = "GreaterThan"
-    threshold        = 2
+    threshold        = 10
   }
 
   action {
