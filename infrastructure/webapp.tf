@@ -1,10 +1,10 @@
-# Plan de App Service (gratuito F1)
+# Plan de App Service
 resource "azurerm_service_plan" "secureincident_asp" {
   name                = var.app_service_plan_name
   resource_group_name = azurerm_resource_group.secureincident_rg.name
   location            = azurerm_resource_group.secureincident_rg.location
   os_type             = "Linux"
-  sku_name            = "B1"          # Plan gratuito
+  sku_name            = "B1"
 }
 
 # Web App Linux con Python
@@ -18,14 +18,12 @@ resource "azurerm_linux_web_app" "secureincident_app" {
     application_stack {
       python_version = "3.12"
     }
-    always_on           = false          # Ahorra recursos en plan gratuito
-    vnet_route_all_enabled = true        # Necesario para VNet Integration
-    
+    always_on           = false
+    vnet_route_all_enabled = true
   }
 
-  https_only          = true           # Requerido por la política
-  
-  # Configuración de la conexión a la base de datos
+  https_only = true
+
   app_settings = {
     "DATABASE_URL" = "postgresql://${var.postgresql_admin_login}:${azurerm_key_vault_secret.db_password.value}@${var.postgresql_server_name}.postgres.database.azure.com:5432/${var.postgresql_database_name}?sslmode=require"
     "SECRET_KEY"   = var.secret_key
@@ -39,28 +37,22 @@ resource "azurerm_linux_web_app" "secureincident_app" {
     "DEFAULT_EMPLOYEE_EMAIL"    = var.default_employee_email
     "DEFAULT_EMPLOYEE_USERNAME" = var.default_employee_username
     "DEFAULT_EMPLOYEE_PASSWORD" = var.default_employee_password
+
+    # 🔥 Application Insights (monitorización)
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.secureincident.connection_string
   }
 
-  # Identidad gestionada (para acceder a Key Vault en el futuro)
   identity {
     type = "SystemAssigned"
   }
 
-  # 🔹 Etiqueta obligatoria exigida por la política
   tags = {
     Project = "Incidencias"
   }
 }
 
-# Configurar VNet Integration (Swift connection)
+# Configurar VNet Integration
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
   app_service_id = azurerm_linux_web_app.secureincident_app.id
   subnet_id      = azurerm_subnet.app_integration_subnet.id
 }
-
-# resource "azurerm_app_service_source_control" "github_deploy" {
-#  app_id                 = azurerm_linux_web_app.secureincident_app.id
-#  repo_url               = var.github_repo_url
-#  branch                 = var.github_branch
-#  use_manual_integration = false
-#}
