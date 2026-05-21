@@ -46,34 +46,65 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Remove blocking Action Group
+        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
+        run: |
+          echo "Removing blocking Action Group..."
+          az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --yes || true
+          echo "Action Group removed"
+
+      - name: Remove secrets and policies from Terraform state
+        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
+        working-directory: infrastructure/
+        run: |
+          echo "Removing secrets and policies from state..."
+          terraform state rm azurerm_key_vault_secret.db_password || true
+          terraform state rm azurerm_key_vault_access_policy.current_user || true
+          terraform state rm azurerm_key_vault_access_policy.managed_identity || true
+          terraform state rm azurerm_key_vault.secureincident_vault || true
+          echo "Secrets and policies removed from state"
+
       - name: Terraform Init
         working-directory: infrastructure/
         run: terraform init
 
-      - name: Terraform ${{ inputs.action }}
-        working-directory: infrastructure/
-        run: |
-          if [ "${{ inputs.action }}" = "apply" ]; then
-            terraform apply -auto-approve \
-              -var="db_password=${{ secrets.TF_VAR_db_password }}" \
-              -var="secret_key=${{ secrets.TF_VAR_secret_key }}" \
-              -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
-              -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
-              -var="github_repo_url=${{ vars.REPO_URL }}"
-          else
-            terraform destroy -auto-approve \
-              -var="db_password=${{ secrets.TF_VAR_db_password }}" \
-              -var="secret_key=${{ secrets.TF_VAR_secret_key }}" \
-              -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
-              -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
-              -var="github_repo_url=${{ vars.REPO_URL }}"
-          fi
-
-      - name: Purge Key Vault (after destroy)
+      - name: Delete Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
-          echo "⚠️ Recuerda purgar el Key Vault manualmente:"
-          echo "az keyvault purge --name kv-secureincident2 --location spaincentral"
+          echo "Deleting Key Vault..."
+          az keyvault delete --name kv-secureincident2 --resource-group rg-secureincident || true
+          echo "Key Vault deleted"
+
+      - name: Purge Key Vault
+        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
+        run: |
+          echo "Purging Key Vault..."
+          az keyvault purge --name kv-secureincident2 --location spaincentral --no-wait || true
+          echo "Key Vault purged"
+
+      - name: Terraform Destroy
+        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
+        working-directory: infrastructure/
+        run: |
+          echo "Destroying infrastructure..."
+          terraform destroy -auto-approve \
+            -var="db_password=${{ secrets.TF_VAR_db_password }}" \
+            -var="secret_key=${{ secrets.TF_VAR_secret_key }}" \
+            -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
+            -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
+            -var="github_repo_url=${{ vars.REPO_URL }}"
+          echo "Infrastructure destroyed"
+
+      - name: Terraform Apply
+        if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
+        working-directory: infrastructure/
+        run: |
+          terraform apply -auto-approve \
+            -var="db_password=${{ secrets.TF_VAR_db_password }}" \
+            -var="secret_key=${{ secrets.TF_VAR_secret_key }}" \
+            -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
+            -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
+            -var="github_repo_url=${{ vars.REPO_URL }}"
 
   app:
     name: Application (${{ inputs.action }})
@@ -110,19 +141,18 @@ jobs:
       - name: Destroy application code
         if: inputs.action == 'destroy'
         run: |
-          echo "🗑️ Destruyendo aplicación en App Service..."
-          # Crear un zip con un index.html informativo
+          echo "Destroying application code in App Service..."
           mkdir -p empty_app
           cat > empty_app/index.html << 'EOF'
           <!DOCTYPE html>
           <html>
-          <head><title>App Destruida</title></head>
+          <head><title>App Destroyed</title></head>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-          <h1>🗑️ Aplicación destruida</h1>
-          <p>La aplicación ha sido eliminada del App Service.</p>
-          <p>Ejecuta el workflow con <strong>Action: apply, Component: app</strong> para restaurarla.</p>
+          <h1>Application Destroyed</h1>
+          <p>The application has been removed from App Service.</p>
+          <p>Run the workflow with <strong>Action: apply, Component: app</strong> to restore it.</p>
           <hr>
-          <small>SecureIncident - Modo seguro</small>
+          <small>SecureIncident - Safe Mode</small>
           </body>
           </html>
           EOF
@@ -133,4 +163,4 @@ jobs:
             --resource-group rg-secureincident \
             --name webapp-secureincident \
             --src empty.zip
-          echo "✅ Aplicación eliminada del App Service"
+          echo "Application code removed from App Service"
