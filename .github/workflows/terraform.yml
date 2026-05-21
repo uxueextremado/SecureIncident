@@ -46,14 +46,34 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Remove blocking Action Group
+      - name: Destroy - Remove Application Insights and Action Group
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
-          echo "Removing blocking Action Group..."
-          az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --yes || true
-          echo "Action Group removed"
+          echo "=== DISABLING SMART DETECTION ==="
+          az monitor app-insights component update \
+            --resource-group rg-secureincident \
+            --app insights-secureincident \
+            --disable-smart-detection true || true
+          
+          echo "=== DELETING APPLICATION INSIGHTS ==="
+          az monitor app-insights component delete \
+            --resource-group rg-secureincident \
+            --app insights-secureincident \
+            --yes || true
+          
+          echo "=== WAITING FOR PROPAGATION (30s) ==="
+          sleep 30
+          
+          echo "=== FORCE REMOVING ACTION GROUP ==="
+          az monitor action-group delete \
+            --name "Application Insights Smart Detection" \
+            --resource-group rg-secureincident \
+            --yes || true
+          
+          echo "=== VERIFYING ACTION GROUP IS GONE ==="
+          az monitor action-group list --resource-group rg-secureincident --output table || echo "No action groups found"
 
-      - name: Remove secrets and policies from Terraform state
+      - name: Destroy - Remove secrets and policies from Terraform state
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -64,25 +84,25 @@ jobs:
           terraform state rm azurerm_key_vault.secureincident_vault || true
           echo "Secrets and policies removed from state"
 
-      - name: Terraform Init
+      - name: Destroy - Terraform Init
         working-directory: infrastructure/
         run: terraform init
 
-      - name: Delete Key Vault
+      - name: Destroy - Delete Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Deleting Key Vault..."
           az keyvault delete --name kv-secureincident2 --resource-group rg-secureincident || true
           echo "Key Vault deleted"
 
-      - name: Purge Key Vault
+      - name: Destroy - Purge Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Purging Key Vault..."
           az keyvault purge --name kv-secureincident2 --location spaincentral --no-wait || true
           echo "Key Vault purged"
 
-      - name: Terraform Destroy
+      - name: Destroy - Terraform Destroy
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -95,7 +115,12 @@ jobs:
             -var="github_repo_url=${{ vars.REPO_URL }}"
           echo "Infrastructure destroyed"
 
-      - name: Terraform Apply
+      - name: Apply - Terraform Init
+        if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
+        working-directory: infrastructure/
+        run: terraform init
+
+      - name: Apply - Terraform Apply
         if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
