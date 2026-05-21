@@ -50,7 +50,7 @@ jobs:
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Removing blocking Action Group..."
-          az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --yes || true
+          az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --y || true
           echo "Action Group removed"
 
       - name: Remove secrets and policies from Terraform state
