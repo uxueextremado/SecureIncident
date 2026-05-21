@@ -46,58 +46,14 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # ============================================================
-      # DESTROY: Limpieza completa de recursos problemáticos
-      # ============================================================
-      
-      - name: Destroy - Diagnostic: List Action Groups before cleanup
+      - name: Remove blocking Action Group
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
-          echo "=== ACTION GROUPS BEFORE CLEANUP ==="
-          az monitor action-group list --resource-group rg-secureincident --output table || echo "No action groups found"
+          echo "Removing blocking Action Group..."
+          az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --yes || true
+          echo "Action Group removed"
 
-      - name: Destroy - Disable Smart Detection on Application Insights
-        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        run: |
-          echo "Disabling Smart Detection on Application Insights..."
-          az monitor app-insights component update \
-            --resource-group rg-secureincident \
-            --app insights-secureincident \
-            --disable-smart-detection true || true
-          echo "Smart Detection disabled (or component not found)"
-
-      - name: Destroy - Delete Application Insights (parent resource)
-        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        run: |
-          echo "Deleting Application Insights..."
-          az monitor app-insights component delete \
-            --resource-group rg-secureincident \
-            --app insights-secureincident \
-            --yes || true
-          echo "Application Insights deletion attempted"
-
-      - name: Destroy - Wait for propagation
-        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        run: |
-          echo "Waiting 20 seconds for Azure to process deletions..."
-          sleep 20
-
-      - name: Destroy - Remove any Action Group with 'Smart Detection'
-        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        run: |
-          echo "Removing any Action Group containing 'Smart Detection'..."
-          az monitor action-group list --resource-group rg-secureincident --query "[?contains(name, 'Smart')].name" -o tsv | while read name; do
-            echo "Eliminando Action Group: $name"
-            az monitor action-group delete --name "$name" --resource-group rg-secureincident --yes
-          done || echo "No matching action groups found"
-
-      - name: Destroy - Diagnostic: List Action Groups after cleanup
-        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        run: |
-          echo "=== ACTION GROUPS AFTER CLEANUP ==="
-          az monitor action-group list --resource-group rg-secureincident --output table || echo "No action groups found"
-
-      - name: Destroy - Remove secrets and policies from Terraform state
+      - name: Remove secrets and policies from Terraform state
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -108,25 +64,25 @@ jobs:
           terraform state rm azurerm_key_vault.secureincident_vault || true
           echo "Secrets and policies removed from state"
 
-      - name: Destroy - Terraform Init
+      - name: Terraform Init
         working-directory: infrastructure/
         run: terraform init
 
-      - name: Destroy - Delete Key Vault
+      - name: Delete Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Deleting Key Vault..."
           az keyvault delete --name kv-secureincident2 --resource-group rg-secureincident || true
           echo "Key Vault deleted"
 
-      - name: Destroy - Purge Key Vault
+      - name: Purge Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Purging Key Vault..."
           az keyvault purge --name kv-secureincident2 --location spaincentral --no-wait || true
           echo "Key Vault purged"
 
-      - name: Destroy - Terraform Destroy
+      - name: Terraform Destroy
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -139,16 +95,7 @@ jobs:
             -var="github_repo_url=${{ vars.REPO_URL }}"
           echo "Infrastructure destroyed"
 
-      # ============================================================
-      # APPLY: Despliegue normal
-      # ============================================================
-
-      - name: Apply - Terraform Init
-        if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        working-directory: infrastructure/
-        run: terraform init
-
-      - name: Apply - Terraform Apply
+      - name: Terraform Apply
         if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
