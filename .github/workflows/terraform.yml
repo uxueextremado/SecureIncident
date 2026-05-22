@@ -46,34 +46,13 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Destroy - Remove Application Insights and Action Group
+      - name: Remove blocking Action Group
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
-          echo "=== DISABLING SMART DETECTION ==="
-          az monitor app-insights component update \
-            --resource-group rg-secureincident \
-            --app insights-secureincident \
-            --disable-smart-detection true || true
-          
-          echo "=== DELETING APPLICATION INSIGHTS ==="
-          az monitor app-insights component delete \
-            --resource-group rg-secureincident \
-            --app insights-secureincident \
-            --yes || true
-          
-          echo "=== WAITING FOR PROPAGATION (30s) ==="
-          sleep 30
-          
-          echo "=== FORCE REMOVING ACTION GROUP ==="
-          az monitor action-group delete \
-            --name "Application Insights Smart Detection" \
-            --resource-group rg-secureincident \
-            --yes || true
-          
-          echo "=== VERIFYING ACTION GROUP IS GONE ==="
-          az monitor action-group list --resource-group rg-secureincident --output table || echo "No action groups found"
-
-      - name: Destroy - Remove secrets and policies from Terraform state
+          echo "Removing blocking Action Group..."
+          az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --yes || true
+          echo "Action Group removed"
+      - name: Remove secrets and policies from Terraform state
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -83,26 +62,23 @@ jobs:
           terraform state rm azurerm_key_vault_access_policy.managed_identity || true
           terraform state rm azurerm_key_vault.secureincident_vault || true
           echo "Secrets and policies removed from state"
-
-      - name: Destroy - Terraform Init
+      - name: Terraform Init
         working-directory: infrastructure/
         run: terraform init
 
-      - name: Destroy - Delete Key Vault
+      - name: Delete Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Deleting Key Vault..."
           az keyvault delete --name kv-secureincident2 --resource-group rg-secureincident || true
           echo "Key Vault deleted"
-
-      - name: Destroy - Purge Key Vault
+      - name: Purge Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Purging Key Vault..."
           az keyvault purge --name kv-secureincident2 --location spaincentral --no-wait || true
           echo "Key Vault purged"
-
-      - name: Destroy - Terraform Destroy
+      - name: Terraform Destroy
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -114,13 +90,7 @@ jobs:
             -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
             -var="github_repo_url=${{ vars.REPO_URL }}"
           echo "Infrastructure destroyed"
-
-      - name: Apply - Terraform Init
-        if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
-        working-directory: infrastructure/
-        run: terraform init
-
-      - name: Apply - Terraform Apply
+      - name: Terraform Apply
         if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
         run: |
@@ -130,7 +100,6 @@ jobs:
             -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
             -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
             -var="github_repo_url=${{ vars.REPO_URL }}"
-
   app:
     name: Application (${{ inputs.action }})
     needs: infrastructure
@@ -154,7 +123,6 @@ jobs:
           cd deploy_tmp
           zip -r ../app.zip .
           cd ..
-
       - name: Deploy to App Service
         if: inputs.action == 'apply'
         run: |
@@ -162,7 +130,6 @@ jobs:
             --resource-group rg-secureincident \
             --name webapp-secureincident \
             --src app.zip
-
       - name: Destroy application code
         if: inputs.action == 'destroy'
         run: |
