@@ -142,22 +142,20 @@ jobs:
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'app')
         run: |
           echo "Destroying application code in App Service..."
-          # Verificar si el App Service existe antes de intentar borrar
           if az webapp show --name webapp-secureincident --resource-group rg-secureincident &>/dev/null; then
             mkdir -p empty_app
-            cat > empty_app/index.html << 'EOF'
-            <!DOCTYPE html>
-            <html>
-            <head><title>App Destroyed</title></head>
-            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h1>Application Destroyed</h1>
-            <p>The application has been removed from App Service.</p>
-            <p>Run the workflow with <strong>Action: apply, Component: app</strong> to restore it.</p>
-            <hr>
-            <small>SecureIncident - Safe Mode</small>
-            </body>
-            </html>
-            EOF
+            printf '%s\n' \
+              '<!DOCTYPE html>' \
+              '<html>' \
+              '<head><title>App Destroyed</title></head>' \
+              '<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">' \
+              '<h1>Application Destroyed</h1>' \
+              '<p>The application has been removed from App Service.</p>' \
+              '<p>Run the workflow with <strong>Action: apply, Component: app</strong> to restore it.</p>' \
+              '<hr>' \
+              '<small>SecureIncident - Safe Mode</small>' \
+              '</body>' \
+              '</html>' > empty_app/index.html
             cd empty_app
             zip -r ../empty.zip .
             cd ..
