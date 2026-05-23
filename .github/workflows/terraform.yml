@@ -52,6 +52,7 @@ jobs:
           echo "Removing blocking Action Group..."
           az monitor action-group delete --name "Application Insights Smart Detection" --resource-group rg-secureincident --yes || true
           echo "Action Group removed"
+
       - name: Remove secrets and policies from Terraform state
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
@@ -62,6 +63,7 @@ jobs:
           terraform state rm azurerm_key_vault_access_policy.managed_identity || true
           terraform state rm azurerm_key_vault.secureincident_vault || true
           echo "Secrets and policies removed from state"
+
       - name: Terraform Init
         working-directory: infrastructure/
         run: terraform init
@@ -72,12 +74,14 @@ jobs:
           echo "Deleting Key Vault..."
           az keyvault delete --name kv-secureincident2 --resource-group rg-secureincident || true
           echo "Key Vault deleted"
+
       - name: Purge Key Vault
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         run: |
           echo "Purging Key Vault..."
           az keyvault purge --name kv-secureincident2 --location spaincentral --no-wait || true
           echo "Key Vault purged"
+
       - name: Terraform Destroy
         if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
@@ -90,6 +94,7 @@ jobs:
             -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
             -var="github_repo_url=${{ vars.REPO_URL }}"
           echo "Infrastructure destroyed"
+
       - name: Terraform Apply
         if: inputs.action == 'apply' && (inputs.component == 'all' || inputs.component == 'infrastructure')
         working-directory: infrastructure/
@@ -100,6 +105,7 @@ jobs:
             -var="default_security_password=${{ secrets.TF_VAR_default_security_password }}" \
             -var="default_employee_password=${{ secrets.TF_VAR_default_employee_password }}" \
             -var="github_repo_url=${{ vars.REPO_URL }}"
+
   app:
     name: Application (${{ inputs.action }})
     needs: infrastructure
@@ -123,6 +129,7 @@ jobs:
           cd deploy_tmp
           zip -r ../app.zip .
           cd ..
+
       - name: Deploy to App Service
         if: inputs.action == 'apply'
         run: |
@@ -130,29 +137,35 @@ jobs:
             --resource-group rg-secureincident \
             --name webapp-secureincident \
             --src app.zip
+
       - name: Destroy application code
-        if: inputs.action == 'destroy'
+        if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'app')
         run: |
           echo "Destroying application code in App Service..."
-          mkdir -p empty_app
-          cat > empty_app/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html>
-          <head><title>App Destroyed</title></head>
-          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-          <h1>Application Destroyed</h1>
-          <p>The application has been removed from App Service.</p>
-          <p>Run the workflow with <strong>Action: apply, Component: app</strong> to restore it.</p>
-          <hr>
-          <small>SecureIncident - Safe Mode</small>
-          </body>
-          </html>
-          EOF
-          cd empty_app
-          zip -r ../empty.zip .
-          cd ..
-          az webapp deployment source config-zip \
-            --resource-group rg-secureincident \
-            --name webapp-secureincident \
-            --src empty.zip
-          echo "Application code removed from App Service"
+          # Verificar si el App Service existe antes de intentar borrar
+          if az webapp show --name webapp-secureincident --resource-group rg-secureincident &>/dev/null; then
+            mkdir -p empty_app
+            cat > empty_app/index.html << 'EOF'
+            <!DOCTYPE html>
+            <html>
+            <head><title>App Destroyed</title></head>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h1>Application Destroyed</h1>
+            <p>The application has been removed from App Service.</p>
+            <p>Run the workflow with <strong>Action: apply, Component: app</strong> to restore it.</p>
+            <hr>
+            <small>SecureIncident - Safe Mode</small>
+            </body>
+            </html>
+            EOF
+            cd empty_app
+            zip -r ../empty.zip .
+            cd ..
+            az webapp deployment source config-zip \
+              --resource-group rg-secureincident \
+              --name webapp-secureincident \
+              --src empty.zip || true
+            echo "Application code removed from App Service"
+          else
+            echo "App Service does not exist. Skipping code destruction."
+          fi
