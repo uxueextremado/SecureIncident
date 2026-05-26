@@ -1,4 +1,4 @@
-name: Solution Deploy
+name: App Deploy
 
 on:
   workflow_dispatch:
@@ -8,7 +8,6 @@ on:
         type: choice
         options:
           - deploy
-          - destroy
         default: 'deploy'
         required: true
 
@@ -16,38 +15,39 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  deploy:
-    if: inputs.action == 'deploy'
+  app:
+    name: Application Deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Infrastructure Apply
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: Infrastructure Deploy
-          ref: main
-          inputs: '{"action": "apply"}'
-          token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+      - uses: actions/checkout@v4
 
-      - name: Wait for Infrastructure
-        run: sleep 30
-
-      - name: Trigger App Deploy
-        uses: benc-uk/workflow-dispatch@v1
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          workflow: App Deploy
-          ref: main
-          inputs: '{"action": "deploy"}'
-          token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-  destroy:
-    if: inputs.action == 'destroy'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Infrastructure Destroy
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: Infrastructure Deploy
-          ref: main
-          inputs: '{"action": "destroy"}'
-          token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+      - name: Zip application
+        run: |
+          echo "Zipping application..."
+          mkdir -p deploy_tmp
+          cp -r back_front/* deploy_tmp/
+          cd deploy_tmp
+          zip -r ../app.zip .
+          cd ..
+          echo "Application zipped"
+
+      - name: Deploy to App Service
+        run: |
+          echo "Deploying to App Service..."
+          az webapp deployment source config-zip \
+            --resource-group rg-secureincident \
+            --name webapp-secureincident \
+            --src app.zip
+          echo "Deployment complete"
