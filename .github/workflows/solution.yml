@@ -21,33 +21,21 @@ jobs:
     if: inputs.action == 'deploy'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Infrastructure Apply
-        uses: benc-uk/workflow-dispatch@v1
+      - name: Call Infrastructure Deploy
+        uses: ./.github/workflows/infrastructure.yml
         with:
-          workflow: Infrastructure Deploy
-          ref: main
-          inputs: '{"action": "apply"}'
-          token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          action: apply
 
-      - name: Wait for Infrastructure (12 minutes)
-        run: sleep 720   # Espera 12 minutos (720 segundos)
-
-      - name: Trigger App Deploy
-        uses: benc-uk/workflow-dispatch@v1
+      - name: Call App Deploy
+        uses: ./.github/workflows/app.yml
         with:
-          workflow: App Deploy
-          ref: main
-          inputs: '{"action": "deploy"}'
-          token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          action: deploy
 
   destroy:
     if: inputs.action == 'destroy'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Infrastructure Destroy
-        uses: benc-uk/workflow-dispatch@v1
+      - name: Call Infrastructure Destroy
+        uses: ./.github/workflows/infrastructure.yml
         with:
-          workflow: Infrastructure Deploy
-          ref: main
-          inputs: '{"action": "destroy"}'
-          token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          action: destroy
