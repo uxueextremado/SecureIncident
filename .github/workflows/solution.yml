@@ -32,12 +32,12 @@ jobs:
       - name: Wait for Infrastructure to complete
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             let run_id = null;
             
-            // Esperar a que el workflow Infrastructure Deploy se inicie
             for (let i = 0; i < 30; i++) {
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner, repo,
@@ -54,7 +54,6 @@ jobs:
             
             if (!run_id) throw new Error("No se encontró el workflow");
             
-            // Esperar a que termine
             while (true) {
               const run = await github.rest.actions.getWorkflowRun({
                 owner, repo, run_id
