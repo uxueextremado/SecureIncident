@@ -3,7 +3,16 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from models import db, User, Incident, Comment
 from datetime import datetime
 import os
+import logging
 from dotenv import load_dotenv
+
+# Intentar importar Application Insights (solo si está instalado)
+try:
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
+    AI_AVAILABLE = True
+except ImportError:
+    AI_AVAILABLE = False
+    print("opencensus-ext-azure no instalado. Los logs no se enviarán a Application Insights.")
 
 load_dotenv()
 
@@ -18,6 +27,55 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# ==================== CONFIGURACIÓN DE LOGS ====================
+
+# Configurar logger para Application Insights
+logger = logging.getLogger('secureincident')
+logger.setLevel(logging.INFO)
+
+# Configurar handler para consola (siempre disponible)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(console_formatter)
+logger.addHandler(console_handler)
+
+# Configurar handler para Application Insights (solo en Azure)
+connection_string = os.getenv('APPLICATIONINSIGHTS_CONNECTION_STRING')
+if AI_AVAILABLE and connection_string:
+    try:
+        ai_handler = AzureLogHandler(connection_string=connection_string)
+        ai_handler.setLevel(logging.INFO)
+        logger.addHandler(ai_handler)
+        logger.info("Application Insights logging configured successfully")
+    except Exception as e:
+        logger.warning(f"Error configuring Application Insights: {e}")
+else:
+    if not AI_AVAILABLE:
+        logger.info("opencensus-ext-azure not installed. Logs will not be sent to Application Insights.")
+    elif not connection_string:
+        logger.info("Running locally - logs will not be sent to Application Insights.")
+
+# ==================== FUNCIÓN PARA LOGS CON CONTEXTO ====================
+
+def log_with_context(message, level='info', **kwargs):
+    """Envía logs con información adicional del usuario si está autenticado"""
+    extra = {'custom_dimensions': kwargs}
+    
+    # Añadir información del usuario si está autenticado
+    if current_user and current_user.is_authenticated:
+        extra['custom_dimensions']['user_email'] = current_user.email
+        extra['custom_dimensions']['user_role'] = current_user.role
+    
+    if level == 'info':
+        logger.info(message, extra=extra)
+    elif level == 'warning':
+        logger.warning(message, extra=extra)
+    elif level == 'error':
+        logger.error(message, extra=extra)
+
+# ==================== INICIALIZACIÓN DE BASE DE DATOS ====================
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -37,9 +95,9 @@ with app.app_context():
             admin.set_password(admin_pass)
             db.session.add(admin)
             db.session.commit()
-            print(f"✅ Usuario de seguridad creado: {admin_email}")
+            log_with_context(f"Usuario de seguridad creado: {admin_email}", 'info')
         else:
-            print("⚠️ ADVERTENCIA: No se creó usuario de seguridad porque falta DEFAULT_SECURITY_PASSWORD")
+            logger.warning("No se creó usuario de seguridad porque falta DEFAULT_SECURITY_PASSWORD")
     
     # Crear usuario empleado por defecto (solo si no existe ningún empleado)
     if User.query.filter_by(role='employee').count() == 0:
@@ -51,14 +109,17 @@ with app.app_context():
             employee.set_password(emp_pass)
             db.session.add(employee)
             db.session.commit()
-            print(f"✅ Usuario empleado creado: {emp_email}")
+            log_with_context(f"Usuario empleado creado: {emp_email}", 'info')
         else:
-            print("⚠️ ADVERTENCIA: No se creó usuario empleado porque falta DEFAULT_EMPLOYEE_PASSWORD")
+            logger.warning("No se creó usuario empleado porque falta DEFAULT_EMPLOYEE_PASSWORD")
+    
+    logger.info("Aplicación SecureIncident iniciada correctamente")
 
 # ==================== RUTAS PÚBLICAS ====================
 
 @app.route('/')
 def index():
+    log_with_context("Página de inicio accedida", 'info')
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -74,9 +135,11 @@ def login():
         # Verificar credenciales y que el usuario esté activo
         if user and user.check_password(password) and user.active:
             login_user(user)
+            log_with_context(f"Inicio de sesión exitoso: {email}", 'info')
             flash(f'¡Bienvenido {user.username}!', 'success')
             return redirect(url_for('dashboard'))
         else:
+            log_with_context(f"Intento de inicio de sesión fallido: {email}", 'warning')
             flash('Email o contraseña incorrectos, o usuario deshabilitado', 'danger')
     
     return render_template('login.html')
@@ -92,14 +155,17 @@ def registro():
         password = request.form.get('password')
         
         if User.query.filter_by(email=email).first():
+            log_with_context(f"Intento de registro con email ya existente: {email}", 'warning')
             flash('El email ya está registrado', 'danger')
         elif User.query.filter_by(username=username).first():
+            log_with_context(f"Intento de registro con username ya existente: {username}", 'warning')
             flash('El nombre de usuario ya existe', 'danger')
         else:
             user = User(username=username, email=email, role='employee', active=True)
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
+            log_with_context(f"Nuevo usuario registrado: {email}", 'info')
             flash('Registro exitoso. Ahora puedes iniciar sesión', 'success')
             return redirect(url_for('login'))
     
@@ -108,6 +174,7 @@ def registro():
 @app.route('/logout')
 @login_required
 def logout():
+    log_with_context(f"Usuario cerró sesión: {current_user.email}", 'info')
     logout_user()
     flash('Sesión cerrada correctamente', 'info')
     return redirect(url_for('index'))
@@ -127,23 +194,29 @@ def dashboard():
         'investigating': len([i for i in incidents if i.status == 'investigating']),
         'resolved': len([i for i in incidents if i.status == 'resolved'])
     }
+    log_with_context(f"Dashboard de empleado accedido por {current_user.email}", 'info')
     return render_template('dashboard_employee.html', incidents=incidents, stats=stats)
 
 @app.route('/reportar', methods=['GET', 'POST'])
 @login_required
 def report_incident():
     if request.method == 'POST':
-        incident = Incident(
-            title=request.form.get('title'),
-            description=request.form.get('description'),
-            incident_type=request.form.get('incident_type'),
-            severity=request.form.get('severity'),
-            user_id=current_user.id
-        )
-        db.session.add(incident)
-        db.session.commit()
-        flash('Incidente reportado correctamente', 'success')
-        return redirect(url_for('dashboard'))
+        try:
+            incident = Incident(
+                title=request.form.get('title'),
+                description=request.form.get('description'),
+                incident_type=request.form.get('incident_type'),
+                severity=request.form.get('severity'),
+                user_id=current_user.id
+            )
+            db.session.add(incident)
+            db.session.commit()
+            log_with_context(f"Nuevo incidente reportado por {current_user.email}: {incident.title}", 'info')
+            flash('Incidente reportado correctamente', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            log_with_context(f"Error al reportar incidente: {str(e)}", 'error')
+            flash('Error al reportar el incidente', 'danger')
     
     return render_template('report_incident.html')
 
@@ -154,9 +227,11 @@ def incident_detail(id):
     
     # Verificar permisos
     if not current_user.is_security() and incident.user_id != current_user.id:
+        log_with_context(f"Intento no autorizado de ver incidente {id} por {current_user.email}", 'warning')
         flash('No tienes permiso para ver este incidente', 'danger')
         return redirect(url_for('dashboard'))
     
+    log_with_context(f"Incidente {id} visualizado por {current_user.email}", 'info')
     return render_template('incident_detail.html', incident=incident)
 
 # ==================== RUTAS DE EQUIPO DE SEGURIDAD ====================
@@ -178,6 +253,7 @@ def security_dashboard():
         'critical': Incident.query.filter_by(severity='critical').count()
     }
     
+    log_with_context(f"Panel de seguridad accedido por {current_user.email}", 'info')
     return render_template('dashboard_security.html', incidents=incidents, stats=stats, security_users=security_users)
 
 @app.route('/security/incidente/<int:id>/actualizar', methods=['POST'])
@@ -187,25 +263,34 @@ def update_incident(id):
         flash('No autorizado', 'danger')
         return redirect(url_for('dashboard'))
     
-    incident = Incident.query.get_or_404(id)
-    incident.status = request.form.get('status')
-    incident.severity = request.form.get('severity')
+    try:
+        incident = Incident.query.get_or_404(id)
+        old_status = incident.status
+        old_severity = incident.severity
+        
+        incident.status = request.form.get('status')
+        incident.severity = request.form.get('severity')
+        
+        if request.form.get('assigned_to'):
+            incident.assigned_to = int(request.form.get('assigned_to'))
+        
+        incident.updated_at = datetime.utcnow()
+        
+        if request.form.get('comment'):
+            comment = Comment(
+                content=request.form.get('comment'),
+                user_id=current_user.id,
+                incident_id=id
+            )
+            db.session.add(comment)
+        
+        db.session.commit()
+        log_with_context(f"Incidente {id} actualizado por {current_user.email}: estado {old_status}->{incident.status}, severidad {old_severity}->{incident.severity}", 'info')
+        flash('Incidente actualizado correctamente', 'success')
+    except Exception as e:
+        log_with_context(f"Error al actualizar incidente {id}: {str(e)}", 'error')
+        flash('Error al actualizar el incidente', 'danger')
     
-    if request.form.get('assigned_to'):
-        incident.assigned_to = int(request.form.get('assigned_to'))
-    
-    incident.updated_at = datetime.utcnow()
-    
-    if request.form.get('comment'):
-        comment = Comment(
-            content=request.form.get('comment'),
-            user_id=current_user.id,
-            incident_id=id
-        )
-        db.session.add(comment)
-    
-    db.session.commit()
-    flash('Incidente actualizado correctamente', 'success')
     return redirect(url_for('security_dashboard'))
 
 @app.route('/security/incidente/<int:id>/comentar', methods=['POST'])
@@ -215,14 +300,20 @@ def add_comment(id):
         flash('No autorizado', 'danger')
         return redirect(url_for('dashboard'))
     
-    comment = Comment(
-        content=request.form.get('comment'),
-        user_id=current_user.id,
-        incident_id=id
-    )
-    db.session.add(comment)
-    db.session.commit()
-    flash('Comentario añadido', 'success')
+    try:
+        comment = Comment(
+            content=request.form.get('comment'),
+            user_id=current_user.id,
+            incident_id=id
+        )
+        db.session.add(comment)
+        db.session.commit()
+        log_with_context(f"Comentario añadido al incidente {id} por {current_user.email}", 'info')
+        flash('Comentario añadido', 'success')
+    except Exception as e:
+        log_with_context(f"Error al añadir comentario al incidente {id}: {str(e)}", 'error')
+        flash('Error al añadir comentario', 'danger')
+    
     return redirect(url_for('incident_detail', id=id))
 
 @app.route('/security/incidente/<int:id>/eliminar', methods=['POST'])
@@ -232,11 +323,17 @@ def delete_incident(id):
         flash('No autorizado', 'danger')
         return redirect(url_for('dashboard'))
     
-    incident = Incident.query.get_or_404(id)
-    db.session.delete(incident)
-    db.session.commit()
+    try:
+        incident = Incident.query.get_or_404(id)
+        incident_title = incident.title
+        db.session.delete(incident)
+        db.session.commit()
+        log_with_context(f"Incidente {id} eliminado por {current_user.email}: {incident_title}", 'info')
+        flash(f'Incidente #{id} eliminado correctamente', 'success')
+    except Exception as e:
+        log_with_context(f"Error al eliminar incidente {id}: {str(e)}", 'error')
+        flash('Error al eliminar el incidente', 'danger')
     
-    flash(f'Incidente #{id} eliminado correctamente', 'success')
     return redirect(url_for('security_dashboard'))
 
 # ==================== GESTIÓN DE USUARIOS (SOLO SEGURIDAD) ====================
@@ -248,6 +345,7 @@ def security_users():
         flash('No autorizado', 'danger')
         return redirect(url_for('dashboard'))
     users = User.query.order_by(User.created_at.desc()).all()
+    log_with_context(f"Lista de usuarios consultada por {current_user.email}", 'info')
     return render_template('security_users.html', users=users)
 
 @app.route('/security/usuario/<int:id>/toggle', methods=['POST'])
@@ -269,8 +367,10 @@ def toggle_user_active(id):
     db.session.commit()
     
     estado = "habilitado" if user.active else "deshabilitado"
+    log_with_context(f"Usuario {user.email} ha sido {estado} por {current_user.email}", 'info')
     flash(f'Usuario {user.email} ha sido {estado}', 'success')
     return redirect(url_for('security_users'))
 
 if __name__ == '__main__':
+    logger.info("SecureIncident iniciando en modo desarrollo...")
     app.run(debug=True, host='0.0.0.0', port=5000)

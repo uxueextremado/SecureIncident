@@ -1,0 +1,50 @@
+name: Solution Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Acción a ejecutar'
+        type: choice
+        options:
+          - deploy
+          - destroy
+        default: 'deploy'
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: inputs.action == 'deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Infrastructure Apply
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Infrastructure Deploy
+          inputs: '{"action": "apply"}'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for Infrastructure
+        run: sleep 60
+
+      - name: Trigger App Deploy
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: App Deploy
+          inputs: '{"action": "deploy"}'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  destroy:
+    if: inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Infrastructure Destroy
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Infrastructure Deploy
+          inputs: '{"action": "destroy"}'
+          token: ${{ secrets.GITHUB_TOKEN }}

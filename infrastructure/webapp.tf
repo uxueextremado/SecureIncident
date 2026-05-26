@@ -29,7 +29,6 @@ resource "azurerm_linux_web_app" "secureincident_app" {
     "SECRET_KEY"   = var.secret_key
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     
-    # Variables para los usuarios por defecto
     "DEFAULT_SECURITY_EMAIL"    = var.default_security_email
     "DEFAULT_SECURITY_USERNAME" = var.default_security_username
     "DEFAULT_SECURITY_PASSWORD" = var.default_security_password
@@ -38,7 +37,6 @@ resource "azurerm_linux_web_app" "secureincident_app" {
     "DEFAULT_EMPLOYEE_USERNAME" = var.default_employee_username
     "DEFAULT_EMPLOYEE_PASSWORD" = var.default_employee_password
 
-    # 🔥 Application Insights (monitorización)
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.secureincident.connection_string
   }
 
@@ -51,8 +49,12 @@ resource "azurerm_linux_web_app" "secureincident_app" {
   }
 }
 
-# Configurar VNet Integration
+# Configurar VNet Integration con dependencia explicita
 resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integration" {
   app_service_id = azurerm_linux_web_app.secureincident_app.id
   subnet_id      = azurerm_subnet.app_integration_subnet.id
+
+  depends_on = [
+    azurerm_subnet.app_integration_subnet
+  ]
 }

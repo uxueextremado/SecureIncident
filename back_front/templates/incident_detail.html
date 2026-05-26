@@ -21,11 +21,23 @@
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <strong>Tipo:</strong> 
-                        {% if incident.incident_type == 'other' %}
-                            <span class="badge bg-info">Otro tipo</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ incident.incident_type|replace('_', ' ')|title }}</span>
-                        {% endif %}
+                        <span class="badge bg-secondary">
+                            {% if incident.incident_type == 'phishing' %}
+                                Phishing
+                            {% elif incident.incident_type == 'malware' %}
+                                Malware
+                            {% elif incident.incident_type == 'lost_device' %}
+                                Dispositivo perdido
+                            {% elif incident.incident_type == 'unauthorized_access' %}
+                                Acceso no autorizado
+                            {% elif incident.incident_type == 'data_leak' %}
+                                Fuga de datos
+                            {% elif incident.incident_type == 'other' %}
+                                Otro tipo
+                            {% else %}
+                                {{ incident.incident_type|replace('_', ' ')|title }}
+                            {% endif %}
+                        </span>
                     </div>
                     <div class="col-md-4">
                         <strong>Severidad:</strong>
