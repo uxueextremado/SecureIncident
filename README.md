@@ -86,6 +86,60 @@ Una vez completado el despliegue, se puede comprobar que la aplicación funciona
 
 Estos, confirman que la base de datos está accesible y que la aplicación se ha inicializado correctamente.
 
+## Tests Automatizados
+Se han implementado tres niveles de pruebas para garantizar la calidad y el correcto funcionamiento de la aplicación.
+
+### Estructura de los tests
+tests/
+├── test_unitarios.py # Pruebas unitarias de modelos
+├── test_integracion.py # Pruebas de integración de rutas
+├── test_funcionales_local.py # Pruebas funcionales (entorno local)
+└── test_funcionales_azure.py # Pruebas funcionales (entorno Azure)
+
+### Tipos de pruebas
+
+| Tipo | Descripción | Cobertura |
+|------|-------------|-----------|
+| **Unitarias** | Validan modelos individuales (User, Incident, Comment) | 4 tests |
+| **Integración** | Validan rutas y autenticación (registro, login, reportes) | 5 tests |
+| **Funcionales (Local)** | Simulan usuario real en navegador contra localhost | 2 tests |
+| **Funcionales (Azure)** | Simulan usuario real en navegador contra producción | 2 tests |
+| **TOTAL** | | **11 tests** |
+
+### Ejecución de tests
+
+#### En local (requiere app corriendo)
+
+```bash
+# Terminal 1 - Iniciar la aplicación
+cd back_front
+python app.py
+
+# Terminal 2 - Ejecutar todos los tests
+python -m pytest tests/test_funcionales_local.py tests/test_unitarios.py tests/test_integracion.py -v
+
+# Ejecutar solo un tipo de test
+python -m pytest tests/test_unitarios.py -v
+python -m pytest tests/test_integracion.py -v
+python -m pytest tests/test_funcionales_local.py -v
+```
+
+### En GitHub Actions (automático)
+Los tests se ejecutan automáticamente en cada push o pull request a las ramas main y uxue, mediante el workflow .github/workflows/test.yml.
+
+### Resultados de los tests
+
+| Tipo de test | Tests | Pasados |
+|--------------|-------|---------|
+| Unitarios | 4 | 4 |
+| Integración | 5 | 5 |
+| Funcionales (Azure) | 2 | 2 |
+| **TOTAL** | **11** | **11** |
+
+### Nota sobre warnings
+
+Durante la ejecución de los tests pueden aparecer warnings de deprecación (ej. `datetime.utcnow()`). Estos warnings no indican fallos en la aplicación y los tests siguen pasando correctamente.
+
 ## Destroy desde local
 Para destruir los recursos creados debemos seguir los siguientes pasos:
 
