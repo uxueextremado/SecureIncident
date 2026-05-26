@@ -17,25 +17,24 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  call-infrastructure:
+    name: Call Infrastructure Deploy
+    uses: ./.github/workflows/infrastructure.yml
+    with:
+      action: apply
     if: inputs.action == 'deploy'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Call Infrastructure Deploy
-        uses: ./.github/workflows/infrastructure.yml
-        with:
-          action: apply
 
-      - name: Call App Deploy
-        uses: ./.github/workflows/app.yml
-        with:
-          action: deploy
+  call-app:
+    name: Call App Deploy
+    uses: ./.github/workflows/app.yml
+    with:
+      action: deploy
+    needs: call-infrastructure
+    if: inputs.action == 'deploy'
 
-  destroy:
+  call-infrastructure-destroy:
+    name: Call Infrastructure Destroy
+    uses: ./.github/workflows/infrastructure.yml
+    with:
+      action: destroy
     if: inputs.action == 'destroy'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Call Infrastructure Destroy
-        uses: ./.github/workflows/infrastructure.yml
-        with:
-          action: destroy
