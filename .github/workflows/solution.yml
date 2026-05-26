@@ -22,6 +22,7 @@ jobs:
     uses: ./.github/workflows/infrastructure.yml
     with:
       action: apply
+    secrets: inherit
     if: inputs.action == 'deploy'
 
   call-app:
@@ -29,6 +30,7 @@ jobs:
     uses: ./.github/workflows/app.yml
     with:
       action: deploy
+    secrets: inherit
     needs: call-infrastructure
     if: inputs.action == 'deploy'
 
@@ -37,4 +39,5 @@ jobs:
     uses: ./.github/workflows/infrastructure.yml
     with:
       action: destroy
+    secrets: inherit
     if: inputs.action == 'destroy'
