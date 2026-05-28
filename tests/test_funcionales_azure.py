@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import pytest
 import time
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -41,8 +42,9 @@ def test_pagina_inicio_azure(driver):
 
 def test_registro_y_login_azure(driver):
     """Test funcional AZURE: flujo de registro y login"""
-    # Generar email único para evitar conflictos
-    unique_email = f"testazure{int(time.time())}@test.com"
+    # Generar email ÚNICO con timestamp + random
+    unique_id = f"{int(time.time())}_{random.randint(10000, 99999)}"
+    unique_email = f"testazure{unique_id}@test.com"
     
     driver.get(f'{URL_AZURE}/registro')
     
@@ -52,7 +54,7 @@ def test_registro_y_login_azure(driver):
     )
     
     # Registrar usuario
-    driver.find_element(By.NAME, "username").send_keys("testazure")
+    driver.find_element(By.NAME, "username").send_keys(f"testazure{unique_id}")
     driver.find_element(By.NAME, "email").send_keys(unique_email)
     driver.find_element(By.NAME, "password").send_keys("Test123!")
     

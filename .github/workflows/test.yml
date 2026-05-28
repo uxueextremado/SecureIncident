@@ -3,8 +3,6 @@ name: Run Tests
 on:
   push:
     branches: [ main, uxue ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
