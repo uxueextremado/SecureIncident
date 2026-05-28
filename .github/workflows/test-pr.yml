@@ -1,0 +1,64 @@
+name: PR Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r back_front/requirements.txt
+          pip install pytest pytest-flask
+      
+      - name: Run unit tests
+        id: unit_tests
+        continue-on-error: true
+        run: python -m pytest tests/test_unitarios.py -v
+      
+      - name: Run integration tests
+        id: integration_tests
+        continue-on-error: true
+        run: python -m pytest tests/test_integracion.py -v
+      
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const unitStatus = '${{ steps.unit_tests.outcome }}';
+            const integrationStatus = '${{ steps.integration_tests.outcome }}';
+            
+            let message = '## Resultados de los tests\n\n';
+            message += `| Tipo de test | Resultado |\n`;
+            message += `|-------------|-----------|\n`;
+            message += `| Unitarios | ${unitStatus === 'success' ? 'Pasado' : 'Fallido'} |\n`;
+            message += `| Integración | ${integrationStatus === 'success' ? 'Pasado' : 'Fallido'} |\n`;
+            
+            if (unitStatus === 'success' && integrationStatus === 'success') {
+              message += `\n **Todos los tests pasaron correctamente.**`;
+            } else {
+              message += `\n **Algunos tests fallaron. Revisa los logs.**`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+            
+            if (unitStatus !== 'success' || integrationStatus !== 'success') {
+              process.exit(1);
+            }

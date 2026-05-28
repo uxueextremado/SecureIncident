@@ -65,13 +65,21 @@ Elegir acción (deploy o destroy)
 - Flujo de ejecución de Solution Deploy
 
 Solution Deploy (deploy)
+
     │
+
     ├── 1. Llama a Infrastructure Deploy (apply)
+
     │        │
+
     │        └── Espera automáticamente a que termine (needs)
+
     │
+
     └── 2. Llama a App Deploy (deploy)
+
              │
+
              └── Se ejecuta SOLO si Infrastructure Deploy terminó con éxito
 
 - Configuración de secrets
@@ -91,10 +99,14 @@ Se han implementado tres niveles de pruebas para garantizar la calidad y el corr
 
 ### Estructura de los tests
 tests/
+
 ├── test_unitarios.py # Pruebas unitarias de modelos
+
 ├── test_integracion.py # Pruebas de integración de rutas
-├── test_funcionales_local.py # Pruebas funcionales (entorno local)
-└── test_funcionales_azure.py # Pruebas funcionales (entorno Azure)
+
+├── test_funcionales_local.py # Pruebas funcionales (entorno local), tiene que estar la aplicación desplegada para que funcionen
+
+└── test_funcionales_azure.py # Pruebas funcionales (entorno Azure), tiene que estar la aplicación desplegada para que funcionen
 
 ### Tipos de pruebas
 
