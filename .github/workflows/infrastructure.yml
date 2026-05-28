@@ -11,6 +11,13 @@ on:
           - destroy
         default: 'apply'
         required: true
+  workflow_call:
+    inputs:
+      action:
+        description: 'Acción a ejecutar'
+        type: string
+        default: 'apply'
+        required: true
 
 permissions:
   id-token: write
