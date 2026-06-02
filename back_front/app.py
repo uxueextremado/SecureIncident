@@ -32,11 +32,11 @@ login_manager.login_view = 'login'
 
 # Configurar logger para Application Insights
 logger = logging.getLogger('secureincident')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)  # CAMBIADO: DE INFO A DEBUG
 
 # Configurar handler para consola (siempre disponible)
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(logging.DEBUG)  # CAMBIADO: DE INFO A DEBUG
 console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 logger.addHandler(console_handler)
@@ -46,7 +46,7 @@ connection_string = os.getenv('APPLICATIONINSIGHTS_CONNECTION_STRING')
 if AI_AVAILABLE and connection_string:
     try:
         ai_handler = AzureLogHandler(connection_string=connection_string)
-        ai_handler.setLevel(logging.INFO)
+        ai_handler.setLevel(logging.DEBUG)  # CAMBIADO: DE INFO A DEBUG
         logger.addHandler(ai_handler)
         logger.info("Application Insights logging configured successfully")
     except Exception as e:
@@ -56,6 +56,12 @@ else:
         logger.info("opencensus-ext-azure not installed. Logs will not be sent to Application Insights.")
     elif not connection_string:
         logger.info("Running locally - logs will not be sent to Application Insights.")
+
+# ==================== LOGS DE PRUEBA AL INICIAR (NUEVO) ====================
+logger.info("Aplicación SecureIncident iniciada correctamente")
+logger.warning("Modo de desarrollo activado - Asegúrate de usar HTTPS en producción")
+logger.error("Esto es un log de error de prueba - No hay problema real")
+logger.debug("Log de depuración: Variables de entorno cargadas correctamente")
 
 # ==================== FUNCIÓN PARA LOGS CON CONTEXTO ====================
 
@@ -112,8 +118,6 @@ with app.app_context():
             log_with_context(f"Usuario empleado creado: {emp_email}", 'info')
         else:
             logger.warning("No se creó usuario empleado porque falta DEFAULT_EMPLOYEE_PASSWORD")
-    
-    logger.info("Aplicación SecureIncident iniciada correctamente")
 
 # ==================== RUTAS PÚBLICAS ====================
 
