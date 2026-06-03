@@ -37,7 +37,14 @@ resource "azurerm_linux_web_app" "secureincident_app" {
     "DEFAULT_EMPLOYEE_USERNAME" = var.default_employee_username
     "DEFAULT_EMPLOYEE_PASSWORD" = var.default_employee_password
 
+    # Application Insights - Variables necesarias para activar la extensión
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.secureincident.connection_string
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.secureincident.instrumentation_key
+    "APPINSIGHTS_PROFILERFEATURE_VERSION"   = "1.0.0"
+    "APPINSIGHTS_SNAPSHOTFEATURE_VERSION"   = "1.0.0"
+    "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
+    "XDT_MicrosoftApplicationInsights_Mode" = "recommended"
+    "XDT_MicrosoftApplicationInsights_BaseExtensions" = "disabled"
   }
 
   identity {
