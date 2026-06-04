@@ -83,6 +83,7 @@ Solution Deploy (deploy)
              └── Se ejecuta SOLO si Infrastructure Deploy terminó con éxito
 
 - Configuración de secrets
+
 Los workflows reutilizables necesitan heredar los secrets del workflow llamante. En solution.yml se utiliza secrets: inherit para pasar todos los secrets necesarios a los workflows llamados.
 
 ## Verificación del despliegue
@@ -116,11 +117,10 @@ tests/
 | **Integración** | Validan rutas y autenticación (registro, login, reportes) | 5 tests |
 | **Funcionales (Local)** | Simulan usuario real en navegador contra localhost | 2 tests |
 | **Funcionales (Azure)** | Simulan usuario real en navegador contra producción | 2 tests |
-| **TOTAL** | | **11 tests** |
 
 ### Ejecución de tests
 
-#### En local (requiere app corriendo)
+#### En local
 
 ```bash
 # Terminal 1 - Iniciar la aplicación
@@ -136,17 +136,11 @@ python -m pytest tests/test_integracion.py -v
 python -m pytest tests/test_funcionales_local.py -v
 ```
 
-### En GitHub Actions (automático)
-Los tests se ejecutan automáticamente en cada push o pull request a las ramas main y uxue, mediante el workflow .github/workflows/test.yml.
+Antes de cada commit es recomendable realizar un control de calidad pre-commit, para ello se deberían de ejecutar los tests unitario (como se especifica en la línea anterior).
 
-### Resultados de los tests
-
-| Tipo de test | Tests | Pasados |
-|--------------|-------|---------|
-| Unitarios | 4 | 4 |
-| Integración | 5 | 5 |
-| Funcionales (Azure) | 2 | 2 |
-| **TOTAL** | **11** | **11** |
+#### En GitHub Actions (automático)
+Los tests unitarios, de integración y funcionales se ejecutan en cada push a las ramas main y uxue, mediante el workflow .github/workflows/test.yml.
+Los tests de integración y funcionales se ejecutan en cada pull request a la rama main, mediante el workflow .github/workflows/test-pr.yml. Además, se añade un comentario en el PR que te especifica si los test se han pasado antes de hacer el merge.
 
 ### Nota sobre warnings
 
