@@ -14,7 +14,7 @@ El sistema se despliega en Microsoft Azure utilizando una arquitectura segura y 
 ## Workflows
 Se han creado tres workflows independientes para gestionar el despliegue de SecureIncident, siguiendo el principio de separación de responsabilidades y reutilización de workflows de GitHub Actions.
 
-### Infrastructure Deploy (infrastructure.yml)
+### Infrastructure (infrastructure.yml)
 Gestiona toda la infraestructura de Azure mediante Terraform.
 
 - Acciones:
@@ -31,7 +31,7 @@ Seleccionar rama (main o uxue)
 
 Elegir acción (apply o destroy)
 
-### App Deploy (app.yml)
+### App (app.yml)
 Despliega el código de la aplicación en el App Service.
 
 - Acción:
@@ -48,7 +48,7 @@ Seleccionar rama (main o uxue)
 
 Elegir acción (deploy)
 
-### Solution Deploy (solution.yml)
+### Solution (solution.yml)
 Workflow orquestador que automatiza el despliegue completo utilizando reusable workflows (workflows reutilizables). Llama a infrastructure.yml y espera a que termine (gracias a needs) antes de ejecutar app.yml.
 
 - Acciones:
