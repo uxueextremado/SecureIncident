@@ -8,6 +8,9 @@ SecureIncident es una plataforma web en la nube diseñada para gestionar y rastr
 
 El sistema se despliega en Microsoft Azure utilizando una arquitectura segura y segmentada, con control de acceso basado en roles y funciones de monitorización.
 
+## Driagrama de arquitectura
+![alt text](image.png)
+
 ## Workflows
 Se han creado tres workflows independientes para gestionar el despliegue de SecureIncident, siguiendo el principio de separación de responsabilidades y reutilización de workflows de GitHub Actions.
 
@@ -95,19 +98,31 @@ Una vez completado el despliegue, se puede comprobar que la aplicación funciona
 
 Estos, confirman que la base de datos está accesible y que la aplicación se ha inicializado correctamente.
 
+## Logs y Monitorización
+La aplicación genera logs en 4 niveles distintos donde muestra todas las acciones que se realizan la aplicación como; inicio de sesión exitoso o fallido, registro de nuevo usuario existoso o fallido, reporte o actualización de incidente, errores al reportar o actualizar... Estos pueden visualizarse en Log Stream, Application Insights y Log Analytics workspaces.
+
+Además, para demostrar su correcto funcionamiento cada vez que se despliega SecureIncident, la aplicación se inicia y genera automáticamente 4 logs de diferentes niveles: 
+
+| Nivel | Mensaje | Consulta en Application Insights |
+|------|-------------|-----------|
+| **INFO** | Aplicación SecureIncident iniciada correctamente | traces where severityLevel == 1 take 10 |
+| **WARNING** | Modo de desarrollo activado - Asegúrate de usar HTTPS en producción | traces where severityLevel == 2 take 10 |
+| **ERROR** | Esto es un log de error de prueba - No hay problema real | traces where severityLevel == 3 take 10 |
+| **DEBUG** | Log de depuración: Variables de entorno cargadas correctamente | traces where severityLevel == 0 take 10 |
+
 ## Tests Automatizados
 Se han implementado tres niveles de pruebas para garantizar la calidad y el correcto funcionamiento de la aplicación.
 
 ### Estructura de los tests
 tests/
 
-├── test_unitarios.py # Pruebas unitarias de modelos
+├── test_unitarios.py - Pruebas unitarias de modelos
 
-├── test_integracion.py # Pruebas de integración de rutas
+├── test_integracion.py - Pruebas de integración de rutas
 
-├── test_funcionales_local.py # Pruebas funcionales (entorno local), tiene que estar la aplicación desplegada para que funcionen
+├── test_funcionales_local.py - Pruebas funcionales (entorno local), tiene que estar la aplicación desplegada para que funcionen
 
-└── test_funcionales_azure.py # Pruebas funcionales (entorno Azure), tiene que estar la aplicación desplegada para que funcionen
+└── test_funcionales_azure.py - Pruebas funcionales (entorno Azure), tiene que estar la aplicación desplegada para que funcionen
 
 ### Tipos de pruebas
 
@@ -143,7 +158,6 @@ Los tests unitarios, de integración y funcionales se ejecutan en cada push a la
 Los tests de integración y funcionales se ejecutan en cada pull request a la rama main, mediante el workflow .github/workflows/test-pr.yml. Además, se añade un comentario en el PR que te especifica si los test se han pasado antes de hacer el merge.
 
 ### Nota sobre warnings
-
 Durante la ejecución de los tests pueden aparecer warnings de deprecación (ej. `datetime.utcnow()`). Estos warnings no indican fallos en la aplicación y los tests siguen pasando correctamente.
 
 ## Destroy desde local
@@ -168,6 +182,23 @@ Para destruir los recursos creados debemos seguir los siguientes pasos:
 3. Ejucuta destroy:
 
 *terraform destroy -auto-approve*
+
+## Seguridad del respositorio
+
+### Secret Scanning
+
+El repositorio tiene activado GitHub Secret Scanning, que analiza automáticamente el código en busca de secretos hardcodeados (contraseñas, tokens, claves API...).
+
+GitHub escanea todo el historial del repositorio en busca de patrones de secretos conocidos. Si se detecta un secreto, se genera una alerta en Security → Secret scanning
+
+#### Secretos gestionados de forma segura
+
+| Tipo | Descripción |
+|------|-------------|
+| **Credenciales Azure** | 	GitHub Secrets (AZURE_CLIENT_ID, AZURE_TENANT_ID...) |
+| **Contraseña PostgreSQL** | 	Azure Key Vault |
+| **Secret Key de Flask** | GitHub Secrets (TF_VAR_SECRET_KEY) |
+| **Contraseñas usuarios por defecto** | GitHub Secrets (TF_VAR_DEFAULT_SECURITY_PASSWORD...) |
 
 ## Gestión de Costes
 Para optimizar el consumo de créditos de Azure for Students y evitar gastos innecesarios (debido al límite de créditos), se sigue un procedimiento basado en escenarios momentáneos: 

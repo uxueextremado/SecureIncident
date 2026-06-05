@@ -37,22 +37,39 @@ Servicio creado para almacenar y administrar de forma segura los secretos. En es
 - **Sin secretos en el código:** Los no se almacenan en los archivos de configuración ni en el código. 
 - **Auditabilidad:** Key Vault registra quién accede a cada secreto y cuándo. 
 
-### Azure Monitor: 
-Servicio de supervisión de Azure. Recopila métricas y logs de todos los recursos que desplegamos y permite la visualización del estado de la plataforma en tiempo real. Proporciona: 
-- **Métricas de rendimiento:** CPU, memoria y peticiones de App Service y PostgreSQL. 
-- **Alertas:** Se notifica cuando se superan los límites establecidos. 
-- **Monitorización:** Detecta intentos de login fallidos y reinicios inesperados de la aplicación. 
-- **Logs centralizados:** Almacenae logs para diagnóstico y análisis histórico. 
+### Azure Monitor, Application Insights y Log Analytics: 
+**Azure Monitor:** Servicio de supervisión de Azure. Recopila métricas y logs de todos los recursos que desplegamos y permite la visualización del estado de la plataforma en tiempo real. Proporciona: 
+
+- Métricas de rendimiento: CPU, memoria y peticiones de App Service y PostgreSQL. 
+
+- Alertas: Se notifica cuando se superan los límites establecidos. 
+
+- Monitorización: Detecta intentos de login fallidos y reinicios inesperados de la aplicación. 
+
+- Logs centralizados: Almacenae logs para diagnóstico y análisis histórico. 
+
+**Application Insights:** Monitorización específica de la aplicación web:
+- Tiempos de respuesta y rendimiento.
+- Peticiones HTTP y excepciones.
+- Logs personalizados de la aplicación.
+
+**Log Analytics Workspace (`law-secureincident`):** Almacenamiento centralizado de logs.
 
 ## Integración Continua con GitHub Actions y OIDC
-El despliegue de la infraestructura se automatiza mediante un pipeline de GitHub Actions que utiliza OpenID Connect (OIDC) para autenticarse en Azure.
+El despliegue de la infraestructura se automatiza mediante pipelines de GitHub Actions que utilizan OpenID Connect (OIDC) para autenticarse en Azure.
 
 ### Flujo de trabajo del pipeline
 El pipeline se define en el archivo .github/workflows/terraform.yml y se divide en dos fases principales:
 
-- **Job terraform:** Se encarga de desplegar o actualizar toda la infraestructura en Azure (VNet, subredes, Key Vault, PostgreSQL, App Service, etc.) mediante Terraform. Utiliza OIDC para autenticarse con la Managed Identity tf-oidc-secureincident, que tiene asignado el rol Contributor sobre el grupo de recursos del proyecto.
+### Workflows disponibles
 
-- **Job deploy:** Se ejecuta únicamente si el job terraform finaliza correctamente (needs: terraform). Empaqueta el código de la aplicación (excluyendo archivos innecesarios como .git/, .github/ o .terraform/) y lo despliega en el App Service mediante az webapp deploy, utilizando la misma autenticación OIDC.
+| Workflow | Archivo | Función |
+|----------|---------|---------|
+| **Infrastructure Deploy** | `infrastructure.yml` | Despliega/destruye infraestructura |
+| **App Deploy** | `app.yml` | Despliega solo el código |
+| **Solution Deploy** | `solution.yml` | Orquesta el despliegue completo |
+| **Run Tests** | `test.yml` | Ejecuta tests automáticos al hacer commit |
+| **PR Tests** | `test-pr.yml` | Ejecuta tests automáticos al hacer pull requests |
 
 ### Componentes utilizados
 
