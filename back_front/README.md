@@ -1,15 +1,14 @@
 # Aplicación web - SecureIncident
 
-La interfaz web está desarrollada con HTML5, CSS3, Bootstrap 5 y Jinja2, e incluye:
+La aplicación web está desarrollada con Flask (Python), HTML5, CSS3, Bootstrap 5 y Jinja2. Incluye los siguientes dashboards:
 
-- **Autenticación** con registro/login y roles diferenciados (empleado / seguridad).
-- **Dashboard para empleados:** estadísticas personales, tabla de incidentes propios y formulario de reporte con tipos predefinidos más la opción "Otro tipo".
-- **Dashboard para seguridad:** estadísticas globales, tabla completa de incidentes con edición en línea (estado/severidad), eliminación y acceso a la gestión de usuarios.
-- **Gestión de usuarios:** listado de todos los usuarios, visualización de estado (activo/deshabilitado) y acciones para habilitar o deshabilitar (solo seguridad).
-- **Vista de detalle:** información completa del incidente, comentarios y panel de gestión para el equipo de seguridad.
+- **Dashboard de autenticación:** Registro (se pide nombre de usuario, email y contraseña), login (se pide email y contraseña) y roles diferenciados (empleado / seguridad). Cada usuario nuevo que se crea pertenecerá al rol empleado, para evitar los accesos excesivos.
+- **Dashboard para empleados:** Tabla de incidentes propios (total reportados, pendientes, en investigación y resueltos), historial de incidentes reportados con los datos principales y formulario para reportar un nuevo incidente, donde se pide título, tipo (phising, malware, dispositivo perdido/borrado,acceso no autorizado, fuga de información o otro tipo), severidad (baja, media, alta o crítica) y descripción detallada del incidente.
+- **Dashboard para seguridad:** Tabla de incidentes globales (total reportados, pendientes, en investigación y resueltos), historial de incidentes reportados con los datos principales y panel de gestión de usuarios, donde tenemos un listado de todos los usuarios con su información (ID, nombre de usuario, email, rol, estado y fecha de registro) y acciones para habilitar o deshabilitar (para evitar que usuarios que no se utilizan sigan teniendo acceso). Además, desde el historial de incidentes podemos acceder a cada uno para realizar diferentes acciones como; añadir un comentarios o cambiar el nivel de estado y severidad.
+
 
 ## Despliegue en local
-Para ejecutar la aplicación en un entorno de desarrollo local, sigue estos pasos:
+Para ejecutar la aplicación en un entorno de desarrollo local, se siguen los siguientes pasos:
 
 1. Requisitos previos instalados: Python 3.12 (o superior) y Git.
 
@@ -32,11 +31,11 @@ Para ejecutar la aplicación en un entorno de desarrollo local, sigue estos paso
 
 *pip install -r back_front/requirements_local.txt*
 
-Existen dos archivos distintos de requirements dependiendo de si el despliegue es en local o en Azure. En este caso, se instala requirements_local.txt que excluye psycopg2-binary y opencensus-ext-azure, los cuales no son neceasrios para el despliegue local.
+Existen dos archivos distintos de requirements según el entorno. En local, se instala requirements_local.txt y excluye psycopg2-binary y opencensus-ext-azure. En la nube (Azure), se utiliza requirements.txt e incluye todas las dependencias.
 
 5. Configuración de las variables de entorno
 
-Creamos un archivo .env siguiendo el modelo de .env.example y reemplazando el valor de las variables SECRET_KEY, DEFAULT_SECURITY_PASSWORD y DEFAULT_EMPLOYEE_PASSWORD por los secretos y contraseñas correspondientes.
+Creamos un archivo .env siguiendo el modelo de .env.example y reemplazando los valores de las siguientes variables: SECRET_KEY, DEFAULT_SECURITY_PASSWORD y DEFAULT_EMPLOYEE_PASSWORD.
 
 6. Ejecución de la aplicación:
 
@@ -46,3 +45,34 @@ Creamos un archivo .env siguiendo el modelo de .env.example y reemplazando el va
 7. Acceso a la web:
 
 Abrimos en el navegador la dirección http://127.0.0.1:5000
+
+## Logs y monitorización
+
+La aplicación genera logs en diferentes niveles (INFO, WARNING, ERROR, DEBUG) que se envían a:
+
+- **Application Insights**: Para consultar logs almacenados y métricas de rendimiento
+- **Log Analytics Workspace**: Para análisis histórico y consultas KQL
+- **Log stream**: Para ver logs en tiempo real desde Azure Portal
+
+### Niveles de log implementados
+
+| Nivel | Uso |
+|-------|-----|
+| INFO | Acciones normales |
+| WARNING | Situaciones anómalas |
+| ERROR | Errores críticos |
+| DEBUG | Información detallada |
+
+### Verificación de logs en Azure
+
+```kusto
+// Consulta en Application Insights
+traces
+| order by timestamp desc
+| take 20
+
+// Consulta por nivel de severidad (0: DEBUG , 1:INFO, 2: WARNING, 3: ERROR)
+traces
+| where severityLevel == 1  // INFO
+| take 10
+
